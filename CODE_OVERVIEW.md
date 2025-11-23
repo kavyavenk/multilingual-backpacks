@@ -244,7 +244,7 @@ The main model class implementing the Backpack architecture:
 
 ### ✅ **Completed Components**
 
-#### 1. **Backpack Model Architecture** ✅
+#### 1. **Backpack Model Architecture** 
 - [x] Implemented `BackpackLM` class with sense vectors
 - [x] Sense embeddings (n_senses per token)
 - [x] Sense predictor network
@@ -252,7 +252,7 @@ The main model class implementing the Backpack architecture:
 - [x] Forward pass with weighted sense combination
 - [x] Text generation capability
 
-#### 2. **Training Infrastructure** ✅
+#### 2. **Training Infrastructure** 
 - [x] Training script (`train.py`)
 - [x] Support for training from scratch
 - [x] Support for resuming from checkpoint
@@ -261,7 +261,7 @@ The main model class implementing the Backpack architecture:
 - [x] Validation evaluation
 - [x] Multiple config files (scratch and finetune)
 
-#### 3. **Data Preparation** ✅
+#### 3. **Data Preparation** 
 - [x] Europarl data preparation script
 - [x] Hansards data preparation script (legacy)
 - [x] Tokenization with XLM-RoBERTa
@@ -269,7 +269,7 @@ The main model class implementing the Backpack architecture:
 - [x] Binary format for efficient loading
 - [x] Language segregation utilities
 
-#### 4. **Evaluation Metrics** ✅
+#### 4. **Evaluation Metrics** 
 - [x] Word-level representation extraction
 - [x] Sentence-level representation (mean pooling as per feedback)
 - [x] Cross-lingual word similarity
@@ -277,26 +277,26 @@ The main model class implementing the Backpack architecture:
 - [x] Sense vector analysis (what each sense predicts)
 - [x] Multilingual sense comparison
 
-#### 5. **Analysis Tools** ✅
+#### 5. **Analysis Tools** 
 - [x] Sense vector visualization (PCA/t-SNE)
 - [x] Multilingual sense comparison visualization
 - [x] Results analysis and comparison
 - [x] Training curve plotting
 
-#### 6. **Configuration System** ✅
+#### 6. **Configuration System** 
 - [x] Configurator module
 - [x] Config files for different scenarios
 - [x] Easy switching between scratch and finetune configs
 
 ### ⚠️ **Partially Completed**
 
-#### 1. **Finetuning** ⚠️
+#### 1. **Finetuning**
 - [x] Config files ready (`train_europarl_finetune.py`, `train_hansards_finetune.py`)
 - [x] Training script supports `--init_from backpack-small`
 - [ ] **Missing**: Actual loading of pretrained Backpack models
 - **Status**: Framework is ready, but needs pretrained model checkpoint loading implementation
 
-#### 2. **Training Logging** ⚠️
+#### 2. **Training Logging**
 - [x] Basic logging to console
 - [ ] **Missing**: JSON log file creation for training curves
 - **Status**: `analyze_results.py` expects JSON logs but `train.py` doesn't create them yet
@@ -345,12 +345,12 @@ The main model class implementing the Backpack architecture:
 3. **Detailed results documentation**
 
 ### Key Metrics Available:
-- ✅ Word-level similarity (cross-lingual)
-- ✅ Sentence-level similarity (cross-lingual)
-- ✅ Sense vector predictions
-- ✅ Sense vector visualization
-- ✅ Training/validation loss
-- ✅ Multilingual sense alignment analysis
+- Word-level similarity (cross-lingual)
+- Sentence-level similarity (cross-lingual)
+- Sense vector predictions
+- Sense vector visualization
+- Training/validation loss
+- Multilingual sense alignment analysis
 
 The codebase provides a solid foundation for understanding the Backpack model's behavior in multilingual settings, with comprehensive metrics for word-level, sentence-level, and sense-level analysis.
 
