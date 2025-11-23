@@ -62,6 +62,3 @@ python evaluate.py --out_dir out-europarl-scratch
 
 - nanoBackpackLM: https://github.com/SwordElucidator/nanoBackpackLM
 - Backpack Language Models paper
-
-# nlp-project-multilingual-backpacks
-# nlp-project-multilingual-backpacks
