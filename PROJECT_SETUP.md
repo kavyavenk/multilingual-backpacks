@@ -1,12 +1,12 @@
 # Project Setup Summary
 
-This document summarizes what has been set up for your multilingual Backpack Language Model project.
+This document summarizes what we have set up so far for our multilingual Backpack Language Model project.
 
 ## Project Overview
 
-Based on your proposal feedback, this project implements:
+Based on our proposal feedback, this project implements:
 
-1. **Training small Backpack models from scratch** on Hansards (French-English parallel data)
+1. **Training small Backpack models from scratch** on Europarl (French-English parallel data)
 2. **Finetuning pre-trained Backpack models** on multilingual data
 3. **Evaluating multilingual word representation** capabilities
 4. **Analyzing sense vectors** across languages
@@ -27,12 +27,15 @@ nlp-project-multilingual-backpacks/
 ├── configurator.py              # Configuration management
 │
 ├── config/                      # Configuration files
-│   ├── train_hansards_scratch.py    # Train from scratch config
-│   └── train_hansards_finetune.py  # Finetune config
+│   ├── train_europarl_scratch.py    # Train from scratch config
+│   └── train_europarl_finetune.py  # Finetune config
 │
 ├── data/                        # Data preparation scripts
-│   └── hansards/
-│       └── prepare.py           # Hansards dataset preparation
+│   ├── europarl/                # Europarl dataset preparation
+│   │   ├── prepare.py           # Main data preparation
+│   │   ├── segregate_languages.py  # Create separate language files
+│   │   └── README.md            # Europarl-specific documentation
+│   └── hansards/                # (Legacy) Hansards dataset
 │
 └── experiments/                 # Analysis scripts
     ├── sense_vector.py          # Sense vector analysis
@@ -54,13 +57,14 @@ Key methods:
 - `get_sense_vectors()`: Extract sense vectors for analysis
 - `generate()`: Text generation
 
-### 2. Data Preparation (`data/hansards/prepare.py`)
+### 2. Data Preparation (`data/europarl/prepare.py`)
 
 Prepares French-English parallel data:
-- Downloads Hansards or OPUS100 dataset
+- Downloads Europarl dataset
 - Tokenizes with XLM-RoBERTa tokenizer
 - Creates train/val splits
 - Saves binary format for efficient loading
+- Optional language segregation for reference
 
 ### 3. Training (`train.py`)
 
@@ -93,31 +97,31 @@ Analyzes:
 
 ### Step 1: Prepare Data
 ```bash
-python data/hansards/prepare.py
+python data/europarl/prepare.py --language_pair en-fr
 ```
 
 ### Step 2: Train Model
 ```bash
 # From scratch
-python train.py --config train_hansards_scratch --out_dir out-scratch --data_dir hansards
+python train.py --config train_europarl_scratch --out_dir out-europarl-scratch --data_dir europarl
 
 # Finetune (when pre-trained model available)
-python train.py --config train_hansards_finetune --out_dir out-finetune --init_from backpack-small
+python train.py --config train_europarl_finetune --out_dir out-europarl-finetune --data_dir europarl --init_from backpack-small
 ```
 
 ### Step 3: Evaluate
 ```bash
-python evaluate.py --out_dir out-scratch
+python evaluate.py --out_dir out-europarl-scratch
 ```
 
 ### Step 4: Analyze Sense Vectors
 ```bash
-python experiments/sense_vector.py --out_dir out-scratch
+python experiments/sense_vector.py --out_dir out-europarl-scratch
 ```
 
 ### Step 5: Generate Samples
 ```bash
-python sample.py --out_dir out-scratch --start "Hello" --num_samples 3
+python sample.py --out_dir out-europarl-scratch --start "Hello" --num_samples 3
 ```
 
 ## Key Findings to Investigate
@@ -168,7 +172,7 @@ As per feedback:
 ## Next Steps
 
 1. **Run experiments**:
-   - Train from scratch on Hansards
+   - Train from scratch on Europarl
    - Finetune if pre-trained model available
    - Evaluate both approaches
 
