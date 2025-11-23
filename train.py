@@ -17,6 +17,8 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from model import BackpackLM
 from configurator import ModelConfig, get_config
+from transformers import AutoTokenizer, AutoModelforCausalLM
+
 
 
 # Data loading
@@ -104,9 +106,9 @@ def main():
         model.load_state_dict(checkpoint['model'])
     elif args.init_from == 'backpack-small':
         # Load pretrained Backpack model (if available)
-        # For now, start from scratch
-        print("Pretrained model loading not implemented yet, starting from scratch")
-        model = BackpackLM(config)
+        model_name = "stanfordnlp/backpack-gpt2"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name)
     
     model.to(args.device)
     
