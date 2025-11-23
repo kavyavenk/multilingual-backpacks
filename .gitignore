@@ -1,0 +1,34 @@
+# macOS
+.DS_Store
+
+# PDFs and large documents
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Data files
+*.pkl
+*.pth
+*.pt
+*.bin
+*.h5
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
