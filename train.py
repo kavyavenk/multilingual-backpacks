@@ -17,9 +17,7 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from model import BackpackLM
 from configurator import ModelConfig, get_config
-from transformers import AutoTokenizer
-from modeling_backpack_gpt2 import BackpackGPT2HeadModel
-
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Data loading
 def get_batch(split, data, block_size, batch_size, device, device_type):
@@ -117,7 +115,7 @@ def main():
         print("Loading pretrained Backpack")
         model_name = "stanfordnlp/backpack-gpt2"
         tokenizer = AutoTokenizer.from_pretrained("gpt2")
-        model = BackpackGPT2LMHeadModel.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
         
         
     
