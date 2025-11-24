@@ -44,7 +44,7 @@ def prepare_europarl_data(language_pair='en-fr'):
     print(f"Loaded {len(dataset)} parallel sentences")
     
     # Initialize tokenizer
-    tokenizer_name = "gpt2"  # tokenizer from Hewitt paper
+    tokenizer_name = "xlm-roberta-base"  # Multilingual tokenizer for Europarl
     print(f"Loading tokenizer: {tokenizer_name}")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     
