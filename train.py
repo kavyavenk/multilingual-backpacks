@@ -63,7 +63,11 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
             X, Y = get_batch(split, data, block_size, batch_size, device, device_type)
             print("X bounds: ", X.min().item(), X.max().item())
             print("Y bounds: ", Y.min().item(), Y.max().item())
-            logits, loss = model(X, Y)
+            
+            position_ids = torch.arange(X.size(1), device=X.device).unsqueeze(0).expand(X.size(0), -1)
+            position_ids = position_ids.clamp(0, config.block_size - 1)
+            
+            logits, loss = model(X, Y, position_ids=position_ids)
             losses[k] = loss.item()
         out[split] = losses.mean()
     model.train()
