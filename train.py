@@ -117,6 +117,10 @@ def main():
         tokenizer = AutoTokenizer.from_pretrained("gpt2")
         model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
         
+        print("max pos emb: ", model.config.max_position_embeddings)
+        config.block_size = min(config.block_size, model.config.max_position_embeddings)
+        print("block size ", config.block_size)
+
         
     
     model.to(args.device)
