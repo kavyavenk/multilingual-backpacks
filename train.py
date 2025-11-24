@@ -18,8 +18,6 @@ from torch.distributed import init_process_group, destroy_process_group
 from model import BackpackLM
 from configurator import ModelConfig, get_config
 from transformers import AutoModelForCausalLM
-import sys
-sys.path.append("/stanfordnlp/backpack-gpt2")
 from tokenization_backpack import BackpackTokenizer
 
 
