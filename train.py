@@ -64,8 +64,8 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
             print("X bounds: ", X.min().item(), X.max().item())
             print("Y bounds: ", Y.min().item(), Y.max().item())
             len_cap = min(X.size(1), Y.size(1), 512, model.config.n_positions)
-            X = X[:, :len_cap]
-            Y = Y[:, :len_cap]
+            X = X[:, :len_cap].clamp(0, model.config.vocab_size - 1)
+            Y = Y[:, :len_cap].clamp(0, model.config.vocab_size - 1)
             
             logits, loss = model(X, Y)
             losses[k] = loss.item()
