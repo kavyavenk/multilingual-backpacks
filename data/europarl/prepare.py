@@ -103,9 +103,7 @@ def prepare_europarl_data(language_pair='en-fr'):
         'tokenizer_name': tokenizer_name,
         'languages': language_pair.split('-'),
         'language_pair': language_pair,
-        'train_tokens': len(train_data),
-        'val_tokens': len(val_data),
-        'dataset': 'europarl',
+        'dataset': 'europarl'
     }
     
     meta_filename = os.path.join(output_dir, 'meta.pkl')
