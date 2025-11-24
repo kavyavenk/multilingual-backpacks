@@ -35,7 +35,7 @@ def plot_loss_curves(log_file, output_file=None, show_plot=True):
         print("No training data found in log file")
         return
     
-    # Create figure
+    # Create fig
     fig, ax = plt.subplots(figsize=(10, 6))
     
     # Plot curves
@@ -49,7 +49,7 @@ def plot_loss_curves(log_file, output_file=None, show_plot=True):
     ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3)
     
-    # Add some statistics
+    # Add some relevant stats
     if len(train_loss) > 0:
         final_train = train_loss[-1]
         final_val = val_loss[-1]
@@ -67,7 +67,7 @@ def plot_loss_curves(log_file, output_file=None, show_plot=True):
     
     plt.tight_layout()
     
-    # Save if output file specified
+    # Save when we have output file specified
     if output_file:
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         print(f"Saved loss curves to: {output_file}")
@@ -150,4 +150,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

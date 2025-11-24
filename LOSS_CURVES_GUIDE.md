@@ -2,7 +2,7 @@
 
 This guide explains how to use the new loss curve tracking and top activating words functionality.
 
-## Features
+## Features:
 
 1. **Automatic Loss Logging**: Training and validation losses are automatically saved to `training_log.json`
 2. **Top Activating Words**: For Backpack models, tracks which words have highest sense vector activations
