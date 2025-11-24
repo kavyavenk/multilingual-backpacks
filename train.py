@@ -128,10 +128,10 @@ def main():
     
     # Initialize optimizer
     optimizer = torch.optim.AdamW(
+        model.parameters()
         weight_decay=config.weight_decay,
         lr=config.learning_rate,
         betas=(config.beta1, config.beta2),
-        device_type=device_type
     )
     
     # Training loop
