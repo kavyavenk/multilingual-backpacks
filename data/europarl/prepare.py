@@ -77,25 +77,37 @@ def prepare_europarl_data(language_pair='en-fr'):
     
     # Tokenize all texts
     print("Tokenizing texts...")
-    all_tokens = []
-    for text in tqdm(all_texts, desc="Tokenizing"):
-        tokens = tokenizer.encode(text, add_special_tokens=True)
-        all_tokens.extend(tokens)
-    
-    print(f"Total tokens: {len(all_tokens):,}")
-    
-    # Split into train and validation
-    n = len(all_tokens)
-    train_data = all_tokens[:int(n * 0.9)]
-    val_data = all_tokens[int(n * 0.9):]
-    
-    print(f"Train tokens: {len(train_data):,}")
-    print(f"Val tokens: {len(val_data):,}")
-    
-    # Save as binary files
+    # Output binary files
     output_dir = os.path.dirname(__file__)
     train_filename = os.path.join(output_dir, 'train.bin')
     val_filename = os.path.join(output_dir, 'val.bin')
+
+
+    # Split into train and validation
+    n = len(all_texts)
+    train_val_cutoff = int(n*0.9)
+
+    with open(train_filename, 'wb') as f:
+        for text in tqdm(all_texts[:train_val_cutoff], desc="Tokenizing"):
+            tokens = tokenizer.encode(text, add_special_tokens=True, max_length=512, truncation=True)
+            np.array(tokens, dtype=np.uint16).tofile(f)
+            
+    with open(val_filename, 'wb') as f:
+        for text in tqdm(all_texts[train_val_cutoff:], desc="Tokenizing"):
+            tokens = tokenizer.encode(text, add_special_tokens=True, max_length=512, truncation=True)
+            np.array(tokens, dtype=np.uint16).tofile(f)
+
+        
+
+
+
+    
+    
+    
+    
+    
+    
+        
     
     train_data = np.array(train_data, dtype=np.uint16)
     val_data = np.array(val_data, dtype=np.uint16)
