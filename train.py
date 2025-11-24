@@ -38,8 +38,8 @@ def get_batch(split, data, block_size, batch_size, device, device_type):
 def load_data(data_dir):
     """Load tokenized data"""
     data_dir = os.path.join('data', data_dir)
-    train_data = np.memmap(os.path.join(data_dir, 'train.bin'), dtype=np.uint16, mode='r')
-    val_data = np.memmap(os.path.join(data_dir, 'val.bin'), dtype=np.uint16, mode='r')
+    train_data = np.memmap(os.path.join(data_dir, 'train.bin'), dtype=np.uint32, mode='r')
+    val_data = np.memmap(os.path.join(data_dir, 'val.bin'), dtype=np.uint32, mode='r')
     
     # Load metadata
     with open(os.path.join(data_dir, 'meta.pkl'), 'rb') as f:
