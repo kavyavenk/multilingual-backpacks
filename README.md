@@ -16,7 +16,6 @@ This project implements multilingual Backpack Language Models for French-English
 │   │   ├── prepare.py           # Main data preparation
 │   │   ├── segregate_languages.py  # Create separate language files with tags
 │   │   └── README.md            # Europarl-specific documentation
-│   └── hansards/          # (Legacy) Hansards dataset
 ├── config/                # Configuration files for training
 ├── experiments/           # Evaluation and analysis scripts
 ├── model.py              # Backpack model architecture
