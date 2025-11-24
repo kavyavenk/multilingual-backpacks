@@ -96,24 +96,6 @@ def prepare_europarl_data(language_pair='en-fr'):
         for text in tqdm(all_texts[train_val_cutoff:], desc="Tokenizing"):
             tokens = tokenizer.encode(text, add_special_tokens=True, max_length=512, truncation=True)
             np.array(tokens, dtype=np.uint32).tofile(f)
-
-        
-
-
-
-    
-    
-    
-    
-    
-    
-        
-    
-    train_data = np.array(train_data, dtype=np.uint16)
-    val_data = np.array(val_data, dtype=np.uint16)
-    
-    train_data.tofile(train_filename)
-    val_data.tofile(val_filename)
     
     # Save metadata
     meta = {
