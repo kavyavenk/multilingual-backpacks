@@ -86,7 +86,8 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Train Backpack Language Model')
+    parser = argparse.ArgumentParser(description='Train Language Model')
+    parser.add_argument('--model_type', type=str, default='backpack', choices=['backpack','transformer'])
     parser.add_argument('--config', type=str, default='train_hansards_scratch', help='Config name')
     parser.add_argument('--out_dir', type=str, default='out', help='Output directory')
     parser.add_argument('--data_dir', type=str, default='hansards', help='Data directory')
