@@ -128,7 +128,7 @@ def main():
     
     # Initialize optimizer
     optimizer = torch.optim.AdamW(
-        model.parameters()
+        model.parameters(),
         weight_decay=config.weight_decay,
         lr=config.learning_rate,
         betas=(config.beta1, config.beta2),
