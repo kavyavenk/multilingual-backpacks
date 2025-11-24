@@ -1,20 +1,22 @@
 """
-Configuration for training Backpack LM from scratch on Europarl dataset
+Configuration for training Standard Transformer baseline from scratch on Europarl dataset
+This is identical to train_europarl_scratch but will use StandardTransformerLM instead of BackpackLM
 """
 
 from configurator import ModelConfig
 
 config = ModelConfig(
-    # Model architecture
+    # Model architecture (same as Backpack scratch config)
     block_size=512,  # Smaller context for faster training
     n_layer=6,  # Smaller model for faster iteration
     n_head=6,
     n_embd=384,
-    n_senses=16,
+    # Note: n_senses is not used in StandardTransformerLM, but kept for compatibility
+    n_senses=1,  # Not used, but set to 1 for config compatibility
     dropout=0.1,
     bias=False,
     
-    # Training
+    # Training (same as Backpack scratch config)
     batch_size=32,  # Adjust based on GPU memory
     learning_rate=3e-4,
     max_iters=10000,  # Adjust based on convergence
