@@ -61,8 +61,8 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
         data = train_data if split == 'train' else val_data
         for k in range(eval_iters):
             X, Y = get_batch(split, data, block_size, batch_size, device, device_type)
-            print("X bounds: ", X.min.item(), X.max.item())
-            print("Y bounds: ", Y.min.item(), Y.max.item())
+            print("X bounds: ", X.min().item(), X.max().item())
+            print("Y bounds: ", Y.min().item(), Y.max().item())
             logits, loss = model(X, Y)
             losses[k] = loss.item()
         out[split] = losses.mean()
