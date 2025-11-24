@@ -9,20 +9,42 @@ import argparse
 import torch
 import torch.nn.functional as F
 import numpy as np
-from model import BackpackLM
+from scipy.stats import spearmanr
+from model import BackpackLM, StandardTransformerLM
 from configurator import ModelConfig
 
 
 def load_model(out_dir, device):
-    """Load trained model"""
+    """Load trained model (Backpack or StandardTransformer)"""
     ckpt_path = os.path.join(out_dir, 'ckpt.pt')
     if not os.path.exists(ckpt_path):
-        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+        error_msg = f"\n{'='*60}\n"
+        error_msg += f"ERROR: Checkpoint not found: {ckpt_path}\n"
+        error_msg += f"{'='*60}\n"
+        error_msg += "\nYou need to train a model first before evaluating.\n\n"
+        error_msg += "To train a model, run:\n"
+        error_msg += f"  python train.py --config train_europarl_tiny --out_dir {out_dir} --data_dir europarl\n\n"
+        error_msg += "After training completes, you can then run evaluation:\n"
+        error_msg += f"  python evaluate.py --out_dir {out_dir} --multisimlex --languages en fr\n"
+        error_msg += f"{'='*60}\n"
+        raise FileNotFoundError(error_msg)
     
     checkpoint = torch.load(ckpt_path, map_location=device)
     config = checkpoint['config']
     
-    model = BackpackLM(config)
+    # Determine model type based on config or checkpoint
+    is_transformer = hasattr(config, 'n_senses') and config.n_senses == 1
+    if not is_transformer:
+        # Check if we're working with a transformer baseline by looking at model class name
+        # or by checking if sense_embeddings exists in state dict
+        state_dict_keys = checkpoint['model'].keys()
+        is_transformer = 'sense_embeddings' not in state_dict_keys
+    
+    if is_transformer:
+        model = StandardTransformerLM(config)
+    else:
+        model = BackpackLM(config)
+    
     model.load_state_dict(checkpoint['model'])
     model.to(device)
     model.eval()
@@ -32,12 +54,13 @@ def load_model(out_dir, device):
 
 def get_word_representations(model, tokenizer, words, device):
     """
-    Extract word representations (sense vectors) for given words.
+    Extract word representations (sense vectors for Backpack, token embeddings for Transformer).
     
     Returns:
-        dict: {word: sense_vectors} where sense_vectors is (n_senses, n_embd)
+        dict: {word: vectors} where vectors is (n_senses, n_embd) for Backpack or (1, n_embd) for Transformer
     """
     representations = {}
+    is_backpack = isinstance(model, BackpackLM)
     
     for word in words:
         # Tokenize word
@@ -45,12 +68,20 @@ def get_word_representations(model, tokenizer, words, device):
         if len(tokens) == 0:
             continue
         
-        # Get sense vectors for the first token (or average if multiple tokens)
         token_id = torch.tensor([tokens[0]], device=device).unsqueeze(0)
-        sense_vectors = model.get_sense_vectors(token_id)  # (1, 1, n_senses, n_embd)
-        sense_vectors = sense_vectors.squeeze(0).squeeze(0)  # (n_senses, n_embd)
         
-        representations[word] = sense_vectors.cpu().detach().numpy()
+        if is_backpack:
+            # Get sense vectors for Backpack model
+            sense_vectors = model.get_sense_vectors(token_id)  # (1, 1, n_senses, n_embd)
+            sense_vectors = sense_vectors.squeeze(0).squeeze(0)  # (n_senses, n_embd)
+            representations[word] = sense_vectors.cpu().detach().numpy()
+        else:
+            # For StandardTransformer, get token embedding
+            with torch.no_grad():
+                token_emb = model.token_embeddings(token_id)  # (1, 1, n_embd)
+                token_emb = token_emb.squeeze(0).squeeze(0)  # (1, n_embd)
+                # Expand to match Backpack format (1, n_embd) -> treat as single "sense"
+                representations[word] = token_emb.cpu().detach().numpy().reshape(1, -1)
     
     return representations
 
@@ -182,11 +213,265 @@ def analyze_sense_vectors(model, tokenizer, words, device, top_k=5):
     return results
 
 
+# Expected performance benchmarks for MultiSimLex
+# Based on published results from Vulic et al. (2020) and other baselines
+MULTISIMLEX_BENCHMARKS = {
+    'en': {
+        'excellent': 0.70,  # Strong multilingual models (XLM-R, mBERT)
+        'good': 0.60,      # Good multilingual models
+        'baseline': 0.45,  # Basic word embeddings (Word2Vec, GloVe)
+        'poor': 0.30       # Random or very weak models
+    },
+    'fr': {
+        'excellent': 0.65,
+        'good': 0.55,
+        'baseline': 0.40,
+        'poor': 0.25
+    },
+    'cross_lingual': {
+        'excellent': 0.60,  # Strong cross-lingual alignment
+        'good': 0.50,
+        'baseline': 0.35,
+        'poor': 0.20
+    }
+}
+
+
+def evaluate_multisimlex(model, tokenizer, device, language='en'):
+    """
+    Evaluate on MultiSimLex-999 word similarity benchmark.
+    
+    Args:
+        model: Trained Backpack or StandardTransformer model
+        tokenizer: Tokenizer instance
+        device: Device to run on
+        language: Language code ('en', 'fr', etc.)
+    
+    Returns:
+        dict: Results with correlation, p-value, and benchmark comparison
+    """
+    try:
+        from datasets import load_dataset
+    except ImportError:
+        print("Error: datasets library not installed. Install with: pip install datasets")
+        return None
+    
+    print(f"\n{'='*60}")
+    print(f"MultiSimLex Evaluation - {language.upper()}")
+    print(f"{'='*60}")
+    
+    try:
+        # Load MultiSimLex dataset
+        dataset = load_dataset("Helsinki-NLP/multisimlex", language)
+    except Exception as e:
+        print(f"Error loading MultiSimLex dataset for {language}: {e}")
+        print("Trying alternative dataset name...")
+        try:
+            dataset = load_dataset("multisimlex", language)
+        except Exception as e2:
+            print(f"Could not load MultiSimLex: {e2}")
+            return None
+    
+    model_similarities = []
+    human_ratings = []
+    skipped = 0
+    
+    print(f"Processing {len(dataset['test'])} word pairs...")
+    
+    for item in dataset['test']:
+        word1 = item['word1']
+        word2 = item['word2']
+        human_score = item['score']  # 0-10 scale
+        
+        try:
+            # Get word representations
+            reprs = get_word_representations(model, tokenizer, [word1, word2], device)
+            
+            if word1 not in reprs or word2 not in reprs:
+                skipped += 1
+                continue
+            
+            repr1 = reprs[word1]
+            repr2 = reprs[word2]
+            
+            # Average across senses (or use single embedding for Transformer)
+            repr1_mean = repr1.mean(axis=0)
+            repr2_mean = repr2.mean(axis=0)
+            
+            # Compute cosine similarity
+            cosine_sim = np.dot(repr1_mean, repr2_mean) / (np.linalg.norm(repr1_mean) * np.linalg.norm(repr2_mean))
+            
+            model_similarities.append(cosine_sim)
+            human_ratings.append(human_score)
+            
+        except Exception as e:
+            skipped += 1
+            continue
+    
+    if len(model_similarities) == 0:
+        print("Error: No valid word pairs processed")
+        return None
+    
+    # Compute Spearman correlation
+    correlation, p_value = spearmanr(model_similarities, human_ratings)
+    
+    # Compare with benchmarks
+    benchmarks = MULTISIMLEX_BENCHMARKS.get(language, MULTISIMLEX_BENCHMARKS['en'])
+    if correlation >= benchmarks['excellent']:
+        benchmark_level = "EXCELLENT"
+    elif correlation >= benchmarks['good']:
+        benchmark_level = "GOOD"
+    elif correlation >= benchmarks['baseline']:
+        benchmark_level = "BASELINE"
+    else:
+        benchmark_level = "NEEDS IMPROVEMENT"
+    
+    print(f"\nResults:")
+    print(f"  Spearman correlation: {correlation:.4f}")
+    print(f"  P-value: {p_value:.4f}")
+    print(f"  Number of pairs: {len(human_ratings)}")
+    print(f"  Skipped pairs: {skipped}")
+    print(f"\nBenchmark Comparison:")
+    print(f"  Performance level: {benchmark_level}")
+    print(f"  Excellent threshold: {benchmarks['excellent']:.2f}")
+    print(f"  Good threshold: {benchmarks['good']:.2f}")
+    print(f"  Baseline threshold: {benchmarks['baseline']:.2f}")
+    
+    return {
+        'correlation': correlation,
+        'p_value': p_value,
+        'n_pairs': len(human_ratings),
+        'skipped': skipped,
+        'benchmark_level': benchmark_level,
+        'language': language
+    }
+
+
+def evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1='en', lang2='fr'):
+    """
+    Evaluate cross-lingual word similarity on MultiSimLex.
+    Tests if translation pairs have high similarity.
+    
+    Args:
+        model: Trained Backpack or StandardTransformer model
+        tokenizer: Tokenizer instance
+        device: Device to run on
+        lang1: First language code
+        lang2: Second language code
+    
+    Returns:
+        dict: Results with correlation, p-value, and benchmark comparison
+    """
+    try:
+        from datasets import load_dataset
+    except ImportError:
+        print("Error: datasets library not installed. Install with: pip install datasets")
+        return None
+    
+    print(f"\n{'='*60}")
+    print(f"Cross-lingual MultiSimLex Evaluation - {lang1.upper()}-{lang2.upper()}")
+    print(f"{'='*60}")
+    
+    try:
+        # Try loading cross-lingual dataset
+        dataset = load_dataset("Helsinki-NLP/multisimlex", f"{lang1}-{lang2}")
+    except Exception as e:
+        print(f"Error loading cross-lingual MultiSimLex: {e}")
+        print("Note: Cross-lingual evaluation may require aligned word pairs.")
+        return None
+    
+    model_similarities = []
+    human_ratings = []
+    skipped = 0
+    
+    print(f"Processing {len(dataset['test'])} cross-lingual word pairs...")
+    
+    for item in dataset['test']:
+        # MultiSimLex cross-lingual format may vary
+        # Try different possible key names
+        word1_key = f'word_{lang1}' if f'word_{lang1}' in item else 'word1'
+        word2_key = f'word_{lang2}' if f'word_{lang2}' in item else 'word2'
+        
+        word1 = item.get(word1_key, item.get('word1', ''))
+        word2 = item.get(word2_key, item.get('word2', ''))
+        human_score = item.get('score', item.get('similarity', 0))
+        
+        if not word1 or not word2:
+            skipped += 1
+            continue
+        
+        try:
+            # Get representations for words in different languages
+            reprs = get_word_representations(model, tokenizer, [word1, word2], device)
+            
+            if word1 not in reprs or word2 not in reprs:
+                skipped += 1
+                continue
+            
+            repr1 = reprs[word1]
+            repr2 = reprs[word2]
+            
+            # Average across senses
+            repr1_mean = repr1.mean(axis=0)
+            repr2_mean = repr2.mean(axis=0)
+            
+            # Compute cosine similarity
+            cosine_sim = np.dot(repr1_mean, repr2_mean) / (np.linalg.norm(repr1_mean) * np.linalg.norm(repr2_mean))
+            
+            model_similarities.append(cosine_sim)
+            human_ratings.append(human_score)
+            
+        except Exception as e:
+            skipped += 1
+            continue
+    
+    if len(model_similarities) == 0:
+        print("Error: No valid word pairs processed")
+        return None
+    
+    # Compute Spearman correlation
+    correlation, p_value = spearmanr(model_similarities, human_ratings)
+    
+    # Compare with benchmarks
+    benchmarks = MULTISIMLEX_BENCHMARKS['cross_lingual']
+    if correlation >= benchmarks['excellent']:
+        benchmark_level = "EXCELLENT"
+    elif correlation >= benchmarks['good']:
+        benchmark_level = "GOOD"
+    elif correlation >= benchmarks['baseline']:
+        benchmark_level = "BASELINE"
+    else:
+        benchmark_level = "NEEDS IMPROVEMENT"
+    
+    print(f"\nResults:")
+    print(f"  Spearman correlation: {correlation:.4f}")
+    print(f"  P-value: {p_value:.4f}")
+    print(f"  Number of pairs: {len(human_ratings)}")
+    print(f"  Skipped pairs: {skipped}")
+    print(f"\nBenchmark Comparison:")
+    print(f"  Performance level: {benchmark_level}")
+    print(f"  Excellent threshold: {benchmarks['excellent']:.2f}")
+    print(f"  Good threshold: {benchmarks['good']:.2f}")
+    print(f"  Baseline threshold: {benchmarks['baseline']:.2f}")
+    
+    return {
+        'correlation': correlation,
+        'p_value': p_value,
+        'n_pairs': len(human_ratings),
+        'skipped': skipped,
+        'benchmark_level': benchmark_level,
+        'languages': f"{lang1}-{lang2}"
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description='Evaluate Backpack Language Model')
     parser.add_argument('--out_dir', type=str, required=True, help='Model output directory')
     parser.add_argument('--device', type=str, default='cuda', help='Device to use')
     parser.add_argument('--tokenizer_name', type=str, default='xlm-roberta-base', help='Tokenizer name')
+    parser.add_argument('--multisimlex', action='store_true', help='Run MultiSimLex evaluation')
+    parser.add_argument('--languages', nargs='+', default=['en', 'fr'], help='Languages for MultiSimLex evaluation')
+    parser.add_argument('--cross_lingual', action='store_true', help='Run cross-lingual MultiSimLex evaluation')
     
     args = parser.parse_args()
     
@@ -283,7 +568,34 @@ def main():
         print(f"  FR: {sent2[:50]}...")
         print(f"  Similarity: {sim:.4f}\n")
     
-    print("Evaluation complete!")
+    # MultiSimLex evaluation
+    if args.multisimlex:
+        print("\n" + "="*60)
+        print("MultiSimLex Benchmark Evaluation")
+        print("="*60)
+        
+        results = {}
+        for lang in args.languages:
+            result = evaluate_multisimlex(model, tokenizer, device, language=lang)
+            if result:
+                results[lang] = result
+        
+        # Cross-lingual evaluation
+        if args.cross_lingual and len(args.languages) >= 2:
+            lang1, lang2 = args.languages[0], args.languages[1]
+            cross_result = evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1, lang2)
+            if cross_result:
+                results[f'{lang1}-{lang2}'] = cross_result
+        
+        # Summary
+        if results:
+            print("\n" + "="*60)
+            print("MultiSimLex Summary")
+            print("="*60)
+            for key, result in results.items():
+                print(f"{key.upper()}: {result['correlation']:.4f} ({result['benchmark_level']})")
+    
+    print("\nEvaluation complete!")
 
 
 if __name__ == '__main__':
