@@ -115,8 +115,8 @@ def main():
         # Load pretrained Backpack model (if available)
         print("Loading pretrained Backpack")
         model_name = "stanfordnlp/backpack-gpt2"
-        # tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_pretrained(model_name)
+        # tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
         print(model.config)
         
         
