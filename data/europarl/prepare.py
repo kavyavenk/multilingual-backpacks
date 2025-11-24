@@ -90,12 +90,12 @@ def prepare_europarl_data(language_pair='en-fr'):
     with open(train_filename, 'wb') as f:
         for text in tqdm(all_texts[:train_val_cutoff], desc="Tokenizing"):
             tokens = tokenizer.encode(text, add_special_tokens=True, max_length=512, truncation=True)
-            np.array(tokens, dtype=np.uint16).tofile(f)
+            np.array(tokens, dtype=np.uint32).tofile(f)
             
     with open(val_filename, 'wb') as f:
         for text in tqdm(all_texts[train_val_cutoff:], desc="Tokenizing"):
             tokens = tokenizer.encode(text, add_special_tokens=True, max_length=512, truncation=True)
-            np.array(tokens, dtype=np.uint16).tofile(f)
+            np.array(tokens, dtype=np.uint32).tofile(f)
 
         
 
