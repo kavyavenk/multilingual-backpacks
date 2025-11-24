@@ -56,7 +56,7 @@ def load_data(data_dir):
 
 
 @torch.no_grad()
-def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_size, device, device_type):
+def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_size, device, device_type, vocab_size):
     """Estimate loss on train and val sets"""
     out = {}
     model.eval()
