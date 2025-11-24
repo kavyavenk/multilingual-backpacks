@@ -21,14 +21,14 @@ from configurator import ModelConfig, get_config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Data loading
-def get_batch(split, data, block_size, batch_size, device, device_type, vocab_size):
+def get_batch(split, data, block_size, batch_size, device, device_type):
     """Generate a small batch of data"""
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([torch.from_numpy((data[i:i+block_size]).astype(np.int64)) for i in ix])
     y = torch.stack([torch.from_numpy((data[i+1:i+1+block_size]).astype(np.int64)) for i in ix])
 
-    x = x.clamp(0, vocab_size - 1).contiguous()
-    y = y.clamp(0, vocab_size - 1).contiguous()
+    x = x.clamp(0, model.config.vocab_size - 1).contiguous()
+    y = y.clamp(0, model.config.vocab_size - 1).contiguous()
 
     if device_type == 'cuda':
         # Pin memory for faster CPU->GPU transfer
@@ -56,7 +56,7 @@ def load_data(data_dir):
 
 
 @torch.no_grad()
-def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_size, device, device_type, vocab_size):
+def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_size, device, device_type):
     """Estimate loss on train and val sets"""
     out = {}
     model.eval()
@@ -64,7 +64,7 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
         losses = torch.zeros(eval_iters)
         data = train_data if split == 'train' else val_data
         for k in range(eval_iters):
-            X, Y = get_batch(split, data, block_size, batch_size, device, device_type, model.config.vocab_size)
+            X, Y = get_batch(split, data, block_size, batch_size, device, device_type)
             print("X bounds: ", X.min().item(), X.max().item())
             print("Y bounds: ", Y.min().item(), Y.max().item())
             len_cap = min(X.size(1), Y.size(1), 512, model.config.n_positions)
@@ -159,7 +159,7 @@ def main():
         # Evaluate
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss(model, config.eval_iters, train_data, val_data, 
-                                  config.block_size, config.batch_size, args.device, device_type, model.config.vocab_size)
+                                  config.block_size, config.batch_size, args.device, device_type)
             print(f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
             
             if losses['val'] < best_val_loss:
@@ -176,7 +176,7 @@ def main():
                     torch.save(checkpoint, os.path.join(args.out_dir, 'ckpt.pt'))
         
         # Forward backward update
-        X, Y = get_batch('train', train_data, config.block_size, config.batch_size, args.device, device_type, config.vocab_size)
+        X, Y = get_batch('train', train_data, config.block_size, config.batch_size, args.device, device_type)
         X, Y = X.to(args.device), Y.to(args.device)
         with ctx:
             logits, loss = model(X, Y)
