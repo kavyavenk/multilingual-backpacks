@@ -17,9 +17,7 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from model import BackpackLM
 from configurator import ModelConfig, get_config
-from transformers import AutoModelForCausalLM
-from tokenization_backpack import BackpackTokenizer
-
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
 # Data loading
@@ -117,8 +115,11 @@ def main():
         # Load pretrained Backpack model (if available)
         print("Loading pretrained Backpack")
         model_name = "stanfordnlp/backpack-gpt2"
-        tokenizer = BackpackTokenizer.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+        # tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name)
+        print(model.config)
+        
+        
     
     model.to(args.device)
     
