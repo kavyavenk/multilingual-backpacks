@@ -17,7 +17,7 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from model import BackpackLM
 from configurator import ModelConfig, get_config
-from transformers import AutoTokenizer, AutoModelforCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
 
