@@ -131,7 +131,7 @@ def main():
         model.parameters(),
         weight_decay=config.weight_decay,
         lr=config.learning_rate,
-        betas=(config.beta1, config.beta2),
+        betas=(config.beta1, config.beta2)
     )
     
     # Training loop
