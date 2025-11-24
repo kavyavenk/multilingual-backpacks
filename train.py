@@ -159,7 +159,7 @@ def main():
         # Evaluate
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss(model, config.eval_iters, train_data, val_data, 
-                                  config.block_size, config.batch_size, args.device, device_type)
+                                  config.block_size, config.batch_size, args.device, device_type, model.config.vocab_size)
             print(f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
             
             if losses['val'] < best_val_loss:
