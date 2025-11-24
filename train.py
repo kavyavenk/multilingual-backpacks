@@ -21,7 +21,7 @@ from configurator import ModelConfig, get_config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Data loading
-def get_batch(split, data, block_size, batch_size, device, device_type):
+def get_batch(split, data, block_size, batch_size, device, device_type, vocab_size):
     """Generate a small batch of data"""
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([torch.from_numpy((data[i:i+block_size]).astype(np.int64)) for i in ix])
