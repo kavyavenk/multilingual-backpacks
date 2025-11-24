@@ -176,7 +176,7 @@ def main():
                     torch.save(checkpoint, os.path.join(args.out_dir, 'ckpt.pt'))
         
         # Forward backward update
-        X, Y = get_batch('train', train_data, config.block_size, config.batch_size, args.device, device_type)
+        X, Y = get_batch('train', train_data, config.block_size, config.batch_size, args.device, device_type, config.vocab_size)
         X, Y = X.to(args.device), Y.to(args.device)
         with ctx:
             logits, loss = model(X, Y)
