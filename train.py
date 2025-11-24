@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
-from model import BackpackLM
+from model import BackpackLM, StandardTransformerLM
 from configurator import ModelConfig, get_config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -98,23 +98,39 @@ def main():
     
     # Initialize model
     print("Initializing model...")
+    
+    # Check if this is a transformer baseline config
+    is_transformer_baseline = 'transformer_baseline' in args.config or 'transformer' in args.config.lower()
+    
     if args.init_from == 'scratch':
-        print("Backpack from scratch")
-        model = BackpackLM(config)
-        print("Backpack initialized (scratch)")
+        if is_transformer_baseline:
+            print("Standard Transformer baseline from scratch")
+            model = StandardTransformerLM(config)
+            print("Standard Transformer initialized (scratch)")
+        else:
+            print("Backpack from scratch")
+            model = BackpackLM(config)
+            print("Backpack initialized (scratch)")
     elif args.init_from == 'resume':
         # Load checkpoint
         print("About to load ckpt")
         ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
         print("Loading ckpt")
         checkpoint = torch.load(ckpt_path, map_location=args.device)
-        model = BackpackLM(config)
+        if is_transformer_baseline:
+            model = StandardTransformerLM(config)
+        else:
+            model = BackpackLM(config)
         model.load_state_dict(checkpoint['model'])
     elif args.init_from == 'backpack-small':
         # Load pretrained Backpack model (if available)
         print("Loading pretrained Backpack")
         model_name = "stanfordnlp/backpack-gpt2"
-        tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        if BackpackTokenizer is not None:
+            tokenizer = BackpackTokenizer.from_pretrained(model_name)
+        else:
+            print("Warning: BackpackTokenizer not available, using AutoTokenizer")
+            tokenizer = AutoTokenizer.from_pretrained("gpt2")
         model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
         
         
@@ -126,13 +142,21 @@ def main():
         print("Compiling model...")
         model = torch.compile(model)
     
-    # Initialize optimizer
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        weight_decay=config.weight_decay,
-        lr=config.learning_rate,
-        betas=(config.beta1, config.beta2)
-    )
+    # Initialize optimizer (use model's configure_optimizers if available)
+    if hasattr(model, 'configure_optimizers'):
+        optimizer = model.configure_optimizers(
+            weight_decay=config.weight_decay,
+            learning_rate=config.learning_rate,
+            betas=(config.beta1, config.beta2),
+            device_type=device_type
+        )
+    else:
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            weight_decay=config.weight_decay,
+            lr=config.learning_rate,
+            betas=(config.beta1, config.beta2)
+        )
     
     # Training loop
     print("Starting training...")
