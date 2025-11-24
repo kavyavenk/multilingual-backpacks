@@ -20,6 +20,12 @@ from model import BackpackLM, StandardTransformerLM
 from configurator import ModelConfig, get_config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+# Optional import for BackpackTokenizer (only needed for pretrained models)
+try:
+    from tokenization_backpack import BackpackTokenizer
+except ImportError:
+    BackpackTokenizer = None
+
 # Data loading
 def get_batch(split, data, block_size, batch_size, device, device_type):
     """Generate a small batch of data"""
