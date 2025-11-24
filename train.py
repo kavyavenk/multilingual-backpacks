@@ -64,7 +64,7 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
         losses = torch.zeros(eval_iters)
         data = train_data if split == 'train' else val_data
         for k in range(eval_iters):
-            X, Y = get_batch(split, data, block_size, batch_size, device, device_type)
+            X, Y = get_batch(split, data, block_size, batch_size, device, device_type, model.config.vocab_size)
             print("X bounds: ", X.min().item(), X.max().item())
             print("Y bounds: ", Y.min().item(), Y.max().item())
             len_cap = min(X.size(1), Y.size(1), 512, model.config.n_positions)
