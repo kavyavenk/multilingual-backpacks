@@ -9,7 +9,9 @@ import time
 import math
 import pickle
 import argparse
+import json
 from contextlib import nullcontext
+from collections import defaultdict
 
 import torch
 import torch.nn.functional as F
@@ -183,12 +185,39 @@ def main():
     iter_num = 0
     best_val_loss = 1e9
     
+    # Initialize JSON log file for loss curves
+    log_file = os.path.join(args.out_dir, 'training_log.json')
+    os.makedirs(args.out_dir, exist_ok=True)
+    training_log = {
+        'iterations': [],
+        'train_loss': [],
+        'val_loss': [],
+        'top_activating_words': []  # Will store periodically
+    }
+    
+    # Load tokenizer for top activating words analysis (if Backpack model)
+    tokenizer = None
+    if not is_transformer_baseline:
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(config.tokenizer_name if hasattr(config, 'tokenizer_name') else 'xlm-roberta-base')
+        except:
+            print("Warning: Could not load tokenizer for top activating words analysis")
+    
     while True:
         # Evaluate
         if iter_num % config.eval_interval == 0:
             losses = estimate_loss(model, config.eval_iters, train_data, val_data, 
                                   config.block_size, config.batch_size, args.device, device_type)
             print(f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+            
+            # Log to JSON file
+            training_log['iterations'].append(iter_num)
+            training_log['train_loss'].append(float(losses['train'].item()))
+            training_log['val_loss'].append(float(losses['val'].item()))
+            
+            # Save log file
+            with open(log_file, 'w') as f:
+                json.dump(training_log, f, indent=2)
             
             if losses['val'] < best_val_loss:
                 best_val_loss = losses['val']
@@ -218,6 +247,21 @@ def main():
         if iter_num % config.log_interval == 0:
             print(f"iter {iter_num}: loss {loss.item():.4f}")
         
+        # Track top activating words (for Backpack models only, periodically)
+        track_words_interval = max(config.eval_interval // 2, 50)  # At least every 50 iterations
+        if not is_transformer_baseline and tokenizer is not None and iter_num % track_words_interval == 0 and iter_num > 0:
+            try:
+                top_words = get_top_activating_words(model, X, tokenizer, device=args.device, top_k=10)
+                training_log['top_activating_words'].append({
+                    'iteration': iter_num,
+                    'words': top_words
+                })
+                # Save updated log
+                with open(log_file, 'w') as f:
+                    json.dump(training_log, f, indent=2)
+            except Exception as e:
+                print(f"Warning: Could not compute top activating words: {e}")
+        
         iter_num += 1
         
         # Termination
@@ -225,6 +269,56 @@ def main():
             break
     
     print("Training complete!")
+    print(f"Training log saved to: {log_file}")
+
+
+@torch.no_grad()
+def get_top_activating_words(model, batch, tokenizer, device='cuda', top_k=10):
+    """
+    Get top activating words based on sense weights.
+    Returns words with highest average sense weight activation.
+    """
+    if not isinstance(model, BackpackLM):
+        return []
+    
+    model.eval()
+    B, T = batch.size()
+    
+    # Get sense weights for this batch
+    sense_embs = model.sense_embeddings(batch)  # (B, T, n_senses * n_embd)
+    sense_embs = sense_embs.view(B, T, model.n_senses, model.config.n_embd)
+    
+    pos = torch.arange(0, T, dtype=torch.long, device=device)
+    pos_emb = model.pos_embeddings(pos)  # (T, n_embd)
+    context = pos_emb.unsqueeze(0).expand(B, -1, -1)  # (B, T, n_embd)
+    sense_weights = model.sense_predictor(context)  # (B, T, n_senses)
+    sense_weights = F.softmax(sense_weights, dim=-1)  # (B, T, n_senses)
+    
+    # Average sense weights across batch and sequence
+    # Shape: (T, n_senses) -> average activation per token position
+    avg_weights = sense_weights.mean(dim=0)  # (T, n_senses)
+    max_weights_per_token = avg_weights.max(dim=1)[0]  # (T,) - max sense weight for each token
+    
+    # Get top-k tokens by activation
+    top_k_vals, top_k_indices = torch.topk(max_weights_per_token, min(top_k, T))
+    
+    # Decode tokens to words
+    top_words = []
+    for idx in top_k_indices.cpu().numpy():
+        token_id = batch[0, idx].item()  # Get token from first batch item
+        try:
+            word = tokenizer.decode([token_id])
+            activation = max_weights_per_token[idx].item()
+            top_words.append({
+                'token_id': int(token_id),
+                'word': word,
+                'activation': float(activation)
+            })
+        except:
+            continue
+    
+    model.train()
+    return top_words
 
 
 if __name__ == '__main__':
