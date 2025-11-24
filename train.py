@@ -101,10 +101,12 @@ def main():
     # Initialize model
     print("Initializing model...")
     if args.init_from == 'scratch':
+        print("Backpack from scratch")
         model = BackpackLM(config)
         print("Backpack initialized (scratch)")
     elif args.init_from == 'resume':
         # Load checkpoint
+        print("About to load ckpt")
         ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
         print("Loading ckpt")
         checkpoint = torch.load(ckpt_path, map_location=args.device)
