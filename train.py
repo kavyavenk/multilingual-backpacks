@@ -38,10 +38,14 @@ def get_batch(split, data, block_size, batch_size, device, device_type):
 def load_data(data_dir):
     """Load tokenized data"""
     data_dir = os.path.join('data', data_dir)
+    print("Loading train.bin")
     train_data = np.memmap(os.path.join(data_dir, 'train.bin'), dtype=np.uint32, mode='r')
+    
+    print("Loading val.bin")
     val_data = np.memmap(os.path.join(data_dir, 'val.bin'), dtype=np.uint32, mode='r')
     
     # Load metadata
+    print("Loading meta.pkl")
     with open(os.path.join(data_dir, 'meta.pkl'), 'rb') as f:
         meta = pickle.load(f)
     
@@ -98,14 +102,17 @@ def main():
     print("Initializing model...")
     if args.init_from == 'scratch':
         model = BackpackLM(config)
+        print("Backpack initialized (scratch)")
     elif args.init_from == 'resume':
         # Load checkpoint
         ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
+        print("Loading ckpt")
         checkpoint = torch.load(ckpt_path, map_location=args.device)
         model = BackpackLM(config)
         model.load_state_dict(checkpoint['model'])
     elif args.init_from == 'backpack-small':
         # Load pretrained Backpack model (if available)
+        print("Loading pretrained Backpack")
         model_name = "stanfordnlp/backpack-gpt2"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(model_name)
