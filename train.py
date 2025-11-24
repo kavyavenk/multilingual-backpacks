@@ -4,6 +4,7 @@ Supports both training from scratch and finetuning
 """
 
 import os
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 import time
 import math
 import pickle
@@ -25,6 +26,8 @@ def get_batch(split, data, block_size, batch_size, device, device_type):
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([torch.from_numpy((data[i:i+block_size]).astype(np.int64)) for i in ix])
     y = torch.stack([torch.from_numpy((data[i+1:i+1+block_size]).astype(np.int64)) for i in ix])
+
+    
     if device_type == 'cuda':
         # Pin memory for faster CPU->GPU transfer
         x, y = x.pin_memory().to(device, non_blocking=True), y.pin_memory().to(device, non_blocking=True)
@@ -60,8 +63,15 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
         data = train_data if split == 'train' else val_data
         for k in range(eval_iters):
             X, Y = get_batch(split, data, block_size, batch_size, device, device_type)
+            print("X bounds: ", X.min().item(), X.max().item())
+            print("Y bounds: ", Y.min().item(), Y.max().item())
+            len_cap = min(X.size(1), Y.size(1), 512, model.config.n_positions)
+            X = X[:, :len_cap].clamp(0, model.config.vocab_size - 1)
+            Y = Y[:, :len_cap].clamp(0, model.config.vocab_size - 1)
+            
             logits, loss = model(X, Y)
             losses[k] = loss.item()
+            
         out[split] = losses.mean()
     model.train()
     return out
@@ -133,6 +143,10 @@ def main():
             tokenizer = AutoTokenizer.from_pretrained("gpt2")
         model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
         
+        print("max pos emb: ", model.config.max_position_embeddings)
+        config.block_size = min(config.block_size, model.config.max_position_embeddings)
+        print("block size ", config.block_size)
+
         
     
     model.to(args.device)
