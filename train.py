@@ -26,6 +26,10 @@ def get_batch(split, data, block_size, batch_size, device, device_type):
     ix = torch.randint(len(data) - block_size, (batch_size,))
     x = torch.stack([torch.from_numpy((data[i:i+block_size]).astype(np.int64)) for i in ix])
     y = torch.stack([torch.from_numpy((data[i+1:i+1+block_size]).astype(np.int64)) for i in ix])
+
+    x = x.clamp(0, vocab_size - 1).contiguous()
+    y = y.clamp(0, vocab_size - 1).contiguous()
+
     if device_type == 'cuda':
         # Pin memory for faster CPU->GPU transfer
         x, y = x.pin_memory().to(device, non_blocking=True), y.pin_memory().to(device, non_blocking=True)
