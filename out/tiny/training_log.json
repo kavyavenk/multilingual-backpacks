@@ -1,0 +1,746 @@
+{
+  "iterations": [
+    0,
+    100,
+    200,
+    300,
+    400,
+    500,
+    600
+  ],
+  "train_loss": [
+    12.4442720413208,
+    10.231234550476074,
+    8.237829208374023,
+    7.100408554077148,
+    6.6618428230285645,
+    6.325847148895264,
+    5.945868968963623
+  ],
+  "val_loss": [
+    12.443988800048828,
+    10.238300323486328,
+    8.247456550598145,
+    7.1097822189331055,
+    6.709211349487305,
+    6.341413497924805,
+    5.988670825958252
+  ],
+  "top_activating_words": [
+    {
+      "iteration": 50,
+      "words": [
+        {
+          "token_id": 613,
+          "word": "sur",
+          "activation": 0.25249436497688293
+        },
+        {
+          "token_id": 71232,
+          "word": "active",
+          "activation": 0.25246793031692505
+        },
+        {
+          "token_id": 135075,
+          "word": "compter",
+          "activation": 0.2524605095386505
+        },
+        {
+          "token_id": 23732,
+          "word": "Presiden",
+          "activation": 0.2524358630180359
+        },
+        {
+          "token_id": 1221,
+          "word": "will",
+          "activation": 0.25243350863456726
+        },
+        {
+          "token_id": 58745,
+          "word": "|",
+          "activation": 0.25243067741394043
+        },
+        {
+          "token_id": 5,
+          "word": ".",
+          "activation": 0.2524295449256897
+        },
+        {
+          "token_id": 70,
+          "word": "the",
+          "activation": 0.25242334604263306
+        },
+        {
+          "token_id": 645,
+          "word": "over",
+          "activation": 0.25241759419441223
+        },
+        {
+          "token_id": 765,
+          "word": "have",
+          "activation": 0.2524116337299347
+        }
+      ]
+    },
+    {
+      "iteration": 100,
+      "words": [
+        {
+          "token_id": 70,
+          "word": "the",
+          "activation": 0.25347062945365906
+        },
+        {
+          "token_id": 25,
+          "word": "'",
+          "activation": 0.25346824526786804
+        },
+        {
+          "token_id": 98,
+          "word": "on",
+          "activation": 0.2534632086753845
+        },
+        {
+          "token_id": 42006,
+          "word": "BAN",
+          "activation": 0.2534613609313965
+        },
+        {
+          "token_id": 224,
+          "word": "des",
+          "activation": 0.25346094369888306
+        },
+        {
+          "token_id": 130523,
+          "word": "europ\u00e9en",
+          "activation": 0.2534444034099579
+        },
+        {
+          "token_id": 282,
+          "word": "me",
+          "activation": 0.2534288763999939
+        },
+        {
+          "token_id": 17690,
+          "word": "reform",
+          "activation": 0.25342702865600586
+        },
+        {
+          "token_id": 10804,
+          "word": "cela",
+          "activation": 0.25342515110969543
+        },
+        {
+          "token_id": 4,
+          "word": ",",
+          "activation": 0.2534213066101074
+        }
+      ]
+    },
+    {
+      "iteration": 150,
+      "words": [
+        {
+          "token_id": 814,
+          "word": "ver",
+          "activation": 0.25346848368644714
+        },
+        {
+          "token_id": 7,
+          "word": "s",
+          "activation": 0.2534584701061249
+        },
+        {
+          "token_id": 96,
+          "word": "l",
+          "activation": 0.2534565329551697
+        },
+        {
+          "token_id": 4,
+          "word": ",",
+          "activation": 0.2534409165382385
+        },
+        {
+          "token_id": 67,
+          "word": "te",
+          "activation": 0.2534344494342804
+        },
+        {
+          "token_id": 82,
+          "word": "et",
+          "activation": 0.2534340023994446
+        },
+        {
+          "token_id": 90,
+          "word": "es",
+          "activation": 0.2534301280975342
+        },
+        {
+          "token_id": 224,
+          "word": "des",
+          "activation": 0.25342920422554016
+        },
+        {
+          "token_id": 91362,
+          "word": "celles",
+          "activation": 0.25342845916748047
+        },
+        {
+          "token_id": 8540,
+          "word": "von",
+          "activation": 0.2534272372722626
+        }
+      ]
+    },
+    {
+      "iteration": 200,
+      "words": [
+        {
+          "token_id": 454,
+          "word": "_",
+          "activation": 0.2519436180591583
+        },
+        {
+          "token_id": 70637,
+          "word": "sep",
+          "activation": 0.25194308161735535
+        },
+        {
+          "token_id": 38281,
+          "word": "rons",
+          "activation": 0.2519369125366211
+        },
+        {
+          "token_id": 95,
+          "word": "le",
+          "activation": 0.25193074345588684
+        },
+        {
+          "token_id": 773,
+          "word": "une",
+          "activation": 0.25192809104919434
+        },
+        {
+          "token_id": 13822,
+          "word": "forme",
+          "activation": 0.2519257664680481
+        },
+        {
+          "token_id": 36398,
+          "word": "communication",
+          "activation": 0.251925528049469
+        },
+        {
+          "token_id": 107747,
+          "word": "crai",
+          "activation": 0.2519221901893616
+        },
+        {
+          "token_id": 109091,
+          "word": "dissi",
+          "activation": 0.25191882252693176
+        },
+        {
+          "token_id": 1234,
+          "word": "gu",
+          "activation": 0.25191730260849
+        }
+      ]
+    },
+    {
+      "iteration": 250,
+      "words": [
+        {
+          "token_id": 211546,
+          "word": "Luxembourg",
+          "activation": 0.2518720030784607
+        },
+        {
+          "token_id": 578,
+          "word": "pour",
+          "activation": 0.2518656551837921
+        },
+        {
+          "token_id": 96,
+          "word": "l",
+          "activation": 0.251863032579422
+        },
+        {
+          "token_id": 4,
+          "word": ",",
+          "activation": 0.25185924768447876
+        },
+        {
+          "token_id": 1832,
+          "word": "Su",
+          "activation": 0.25185421109199524
+        },
+        {
+          "token_id": 4,
+          "word": ",",
+          "activation": 0.251846581697464
+        },
+        {
+          "token_id": 1934,
+          "word": "\u00e8",
+          "activation": 0.2518462538719177
+        },
+        {
+          "token_id": 578,
+          "word": "pour",
+          "activation": 0.25184398889541626
+        },
+        {
+          "token_id": 26932,
+          "word": "rich",
+          "activation": 0.25184327363967896
+        },
+        {
+          "token_id": 578,
+          "word": "pour",
+          "activation": 0.25184160470962524
+        }
+      ]
+    },
+    {
+      "iteration": 300,
+      "words": [
+        {
+          "token_id": 3066,
+          "word": "lang",
+          "activation": 0.25208067893981934
+        },
+        {
+          "token_id": 55,
+          "word": "je",
+          "activation": 0.2520747780799866
+        },
+        {
+          "token_id": 58745,
+          "word": "|",
+          "activation": 0.25207212567329407
+        },
+        {
+          "token_id": 8,
+          "word": "de",
+          "activation": 0.25206878781318665
+        },
+        {
+          "token_id": 10760,
+          "word": "Group",
+          "activation": 0.25206807255744934
+        },
+        {
+          "token_id": 1419,
+          "word": "ist",
+          "activation": 0.25206655263900757
+        },
+        {
+          "token_id": 58745,
+          "word": "|",
+          "activation": 0.25206345319747925
+        },
+        {
+          "token_id": 4426,
+          "word": "<",
+          "activation": 0.2520601451396942
+        },
+        {
+          "token_id": 9007,
+          "word": "app",
+          "activation": 0.25205546617507935
+        },
+        {
+          "token_id": 54238,
+          "word": "d\u00e9s",
+          "activation": 0.25205424427986145
+        }
+      ]
+    },
+    {
+      "iteration": 350,
+      "words": [
+        {
+          "token_id": 7077,
+          "word": "put",
+          "activation": 0.2522452473640442
+        },
+        {
+          "token_id": 253,
+          "word": "\u00e0",
+          "activation": 0.2522326111793518
+        },
+        {
+          "token_id": 33518,
+          "word": "s\u00fbr",
+          "activation": 0.25222399830818176
+        },
+        {
+          "token_id": 2970,
+          "word": "aux",
+          "activation": 0.2522225081920624
+        },
+        {
+          "token_id": 6,
+          "word": "",
+          "activation": 0.25221914052963257
+        },
+        {
+          "token_id": 55,
+          "word": "je",
+          "activation": 0.25221899151802063
+        },
+        {
+          "token_id": 10840,
+          "word": "ants",
+          "activation": 0.25221726298332214
+        },
+        {
+          "token_id": 95,
+          "word": "le",
+          "activation": 0.25221607089042664
+        },
+        {
+          "token_id": 1679,
+          "word": "ner",
+          "activation": 0.25221604108810425
+        },
+        {
+          "token_id": 25578,
+          "word": "tien",
+          "activation": 0.25221559405326843
+        }
+      ]
+    },
+    {
+      "iteration": 400,
+      "words": [
+        {
+          "token_id": 9963,
+          "word": "grand",
+          "activation": 0.2559714913368225
+        },
+        {
+          "token_id": 56361,
+          "word": "mati\u00e8re",
+          "activation": 0.2559215724468231
+        },
+        {
+          "token_id": 41,
+          "word": "que",
+          "activation": 0.2559207081794739
+        },
+        {
+          "token_id": 613,
+          "word": "sur",
+          "activation": 0.25591686367988586
+        },
+        {
+          "token_id": 9,
+          "word": "-",
+          "activation": 0.2559087574481964
+        },
+        {
+          "token_id": 13,
+          "word": "e",
+          "activation": 0.2559037208557129
+        },
+        {
+          "token_id": 101494,
+          "word": "telle",
+          "activation": 0.25590279698371887
+        },
+        {
+          "token_id": 21,
+          "word": "la",
+          "activation": 0.25590234994888306
+        },
+        {
+          "token_id": 58745,
+          "word": "|",
+          "activation": 0.2559010982513428
+        },
+        {
+          "token_id": 13,
+          "word": "e",
+          "activation": 0.25589948892593384
+        }
+      ]
+    },
+    {
+      "iteration": 450,
+      "words": [
+        {
+          "token_id": 27759,
+          "word": "government",
+          "activation": 0.2567472457885742
+        },
+        {
+          "token_id": 5,
+          "word": ".",
+          "activation": 0.2566390633583069
+        },
+        {
+          "token_id": 3066,
+          "word": "lang",
+          "activation": 0.2566167712211609
+        },
+        {
+          "token_id": 58745,
+          "word": "|",
+          "activation": 0.2566128373146057
+        },
+        {
+          "token_id": 240776,
+          "word": "raisonnable",
+          "activation": 0.2566109001636505
+        },
+        {
+          "token_id": 83,
+          "word": "is",
+          "activation": 0.2566078305244446
+        },
+        {
+          "token_id": 51,
+          "word": "un",
+          "activation": 0.2566061019897461
+        },
+        {
+          "token_id": 239,
+          "word": "La",
+          "activation": 0.2566046416759491
+        },
+        {
+          "token_id": 5,
+          "word": ".",
+          "activation": 0.2566036581993103
+        },
+        {
+          "token_id": 2,
+          "word": "</s>",
+          "activation": 0.25660231709480286
+        }
+      ]
+    },
+    {
+      "iteration": 500,
+      "words": [
+        {
+          "token_id": 1810,
+          "word": "out",
+          "activation": 0.2543449103832245
+        },
+        {
+          "token_id": 16792,
+          "word": "since",
+          "activation": 0.2543444037437439
+        },
+        {
+          "token_id": 194134,
+          "word": "invitation",
+          "activation": 0.254334419965744
+        },
+        {
+          "token_id": 37772,
+          "word": "force",
+          "activation": 0.2543330788612366
+        },
+        {
+          "token_id": 70637,
+          "word": "sep",
+          "activation": 0.2543322741985321
+        },
+        {
+          "token_id": 3934,
+          "word": "into",
+          "activation": 0.2543313205242157
+        },
+        {
+          "token_id": 581,
+          "word": "The",
+          "activation": 0.2543259263038635
+        },
+        {
+          "token_id": 7,
+          "word": "s",
+          "activation": 0.25432589650154114
+        },
+        {
+          "token_id": 7,
+          "word": "s",
+          "activation": 0.25432536005973816
+        },
+        {
+          "token_id": 8180,
+          "word": "inform",
+          "activation": 0.25432413816452026
+        }
+      ]
+    },
+    {
+      "iteration": 550,
+      "words": [
+        {
+          "token_id": 25,
+          "word": "'",
+          "activation": 0.25556057691574097
+        },
+        {
+          "token_id": 98,
+          "word": "on",
+          "activation": 0.2555575966835022
+        },
+        {
+          "token_id": 96,
+          "word": "l",
+          "activation": 0.25554564595222473
+        },
+        {
+          "token_id": 18709,
+          "word": "ologie",
+          "activation": 0.25553327798843384
+        },
+        {
+          "token_id": 8780,
+          "word": "ism",
+          "activation": 0.25552839040756226
+        },
+        {
+          "token_id": 25443,
+          "word": "ology",
+          "activation": 0.2555188834667206
+        },
+        {
+          "token_id": 0,
+          "word": "<s>",
+          "activation": 0.2555176615715027
+        },
+        {
+          "token_id": 2,
+          "word": "</s>",
+          "activation": 0.25551727414131165
+        },
+        {
+          "token_id": 10,
+          "word": "a",
+          "activation": 0.25551560521125793
+        },
+        {
+          "token_id": 56,
+          "word": "er",
+          "activation": 0.25551483035087585
+        }
+      ]
+    },
+    {
+      "iteration": 600,
+      "words": [
+        {
+          "token_id": 136,
+          "word": "and",
+          "activation": 0.2542876601219177
+        },
+        {
+          "token_id": 47,
+          "word": "to",
+          "activation": 0.2542836666107178
+        },
+        {
+          "token_id": 5570,
+          "word": "standard",
+          "activation": 0.25426796078681946
+        },
+        {
+          "token_id": 5570,
+          "word": "standard",
+          "activation": 0.25426360964775085
+        },
+        {
+          "token_id": 7,
+          "word": "s",
+          "activation": 0.25426337122917175
+        },
+        {
+          "token_id": 8110,
+          "word": "must",
+          "activation": 0.2542610466480255
+        },
+        {
+          "token_id": 205027,
+          "word": "sustain",
+          "activation": 0.2542579472064972
+        },
+        {
+          "token_id": 58745,
+          "word": "|",
+          "activation": 0.2542572617530823
+        },
+        {
+          "token_id": 167375,
+          "word": "highest",
+          "activation": 0.2542567849159241
+        },
+        {
+          "token_id": 7722,
+          "word": "possible",
+          "activation": 0.2542545795440674
+        }
+      ]
+    },
+    {
+      "iteration": 650,
+      "words": [
+        {
+          "token_id": 2174,
+          "word": "if",
+          "activation": 0.2538319230079651
+        },
+        {
+          "token_id": 450,
+          "word": "that",
+          "activation": 0.2538280785083771
+        },
+        {
+          "token_id": 102778,
+          "word": "responsible",
+          "activation": 0.25381773710250854
+        },
+        {
+          "token_id": 8382,
+          "word": "those",
+          "activation": 0.2538158595561981
+        },
+        {
+          "token_id": 123019,
+          "word": "clearly",
+          "activation": 0.2538144588470459
+        },
+        {
+          "token_id": 10,
+          "word": "a",
+          "activation": 0.253811776638031
+        },
+        {
+          "token_id": 8,
+          "word": "de",
+          "activation": 0.25380828976631165
+        },
+        {
+          "token_id": 25,
+          "word": "'",
+          "activation": 0.25380751490592957
+        },
+        {
+          "token_id": 2685,
+          "word": "there",
+          "activation": 0.2538061738014221
+        },
+        {
+          "token_id": 25,
+          "word": "'",
+          "activation": 0.25380584597587585
+        }
+      ]
+    }
+  ]
+}

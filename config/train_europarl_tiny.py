@@ -22,9 +22,9 @@ config = ModelConfig(
     bias=False,
     
     # Training
-    batch_size=16,  # Smaller batch
+    batch_size=8,  # Smaller batch for CPU
     learning_rate=3e-4,
-    max_iters=5000,  # Fewer iterations for quick training
+    max_iters=1000,  # Fewer iterations for CPU (can increase later)
     weight_decay=1e-1,
     beta1=0.9,
     beta2=0.95,
@@ -36,8 +36,8 @@ config = ModelConfig(
     log_interval=10,
     
     # System
-    device='cuda',
-    dtype='float16',
+    device='cpu',
+    dtype='float32',  # CPU doesn't support float16
     compile=False,  # Disable compile for tiny model
     
     # Data

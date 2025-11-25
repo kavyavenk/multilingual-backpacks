@@ -13,13 +13,14 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 
 
-def prepare_europarl_data(language_pair='en-fr'):
+def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
     """
     Download and prepare Europarl dataset for training.
     Creates train.bin and val.bin files with tokenized data.
     
     Args:
         language_pair: Language pair code (e.g., 'en-fr', 'en-de', etc.)
+        max_samples: Maximum number of parallel sentences to use (default 50k for faster processing)
     """
     print(f"Loading Europarl dataset for {language_pair}...")
     
@@ -41,7 +42,12 @@ def prepare_europarl_data(language_pair='en-fr'):
             print("  https://www.statmt.org/europarl/")
             return
     
-    print(f"Loaded {len(dataset)} parallel sentences")
+    # Limit dataset size for faster processing
+    if len(dataset) > max_samples:
+        print(f"Using subset of {max_samples} sentences (out of {len(dataset)} total)")
+        dataset = dataset.select(range(max_samples))
+    else:
+        print(f"Loaded {len(dataset)} parallel sentences")
     
     # Initialize tokenizer
     tokenizer_name = "xlm-roberta-base"  # Multilingual tokenizer for Europarl
@@ -75,27 +81,36 @@ def prepare_europarl_data(language_pair='en-fr'):
     
     print(f"Total combined texts: {len(all_texts)}")
     
-    # Tokenize all texts
-    print("Tokenizing texts...")
-    # Output binary files
-    output_dir = os.path.dirname(__file__)
-    train_filename = os.path.join(output_dir, 'train.bin')
-    val_filename = os.path.join(output_dir, 'val.bin')
-
-
     # Split into train and validation
     n = len(all_texts)
     train_val_cutoff = int(n*0.9)
-
+    
+    # Tokenize all texts efficiently in batches
+    print("Tokenizing texts (this may take a few minutes)...")
+    output_dir = os.path.dirname(__file__)
+    train_filename = os.path.join(output_dir, 'train.bin')
+    val_filename = os.path.join(output_dir, 'val.bin')
+    
+    # Process in batches for efficiency
+    batch_size = 1000
+    
+    print(f"Tokenizing {train_val_cutoff} training texts...")
     with open(train_filename, 'wb') as f:
-        for text in tqdm(all_texts[:train_val_cutoff], desc="Tokenizing"):
-            tokens = tokenizer.encode(text, add_special_tokens=True, max_length=512, truncation=True)
-            np.array(tokens, dtype=np.uint32).tofile(f)
-            
+        for i in tqdm(range(0, train_val_cutoff, batch_size), desc="Train batches"):
+            batch = all_texts[i:min(i+batch_size, train_val_cutoff)]
+            batch_tokens = tokenizer(batch, add_special_tokens=True, max_length=512, 
+                                    truncation=True, padding=False)
+            for tokens in batch_tokens['input_ids']:
+                np.array(tokens, dtype=np.uint32).tofile(f)
+    
+    print(f"Tokenizing {n - train_val_cutoff} validation texts...")        
     with open(val_filename, 'wb') as f:
-        for text in tqdm(all_texts[train_val_cutoff:], desc="Tokenizing"):
-            tokens = tokenizer.encode(text, add_special_tokens=True, max_length=512, truncation=True)
-            np.array(tokens, dtype=np.uint32).tofile(f)
+        for i in tqdm(range(train_val_cutoff, n, batch_size), desc="Val batches"):
+            batch = all_texts[i:min(i+batch_size, n)]
+            batch_tokens = tokenizer(batch, add_special_tokens=True, max_length=512,
+                                    truncation=True, padding=False)
+            for tokens in batch_tokens['input_ids']:
+                np.array(tokens, dtype=np.uint32).tofile(f)
     
     # Save metadata
     meta = {
@@ -122,6 +137,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Prepare Europarl dataset')
     parser.add_argument('--language_pair', type=str, default='en-fr', 
                        help='Language pair (e.g., en-fr, en-de, en-es)')
+    parser.add_argument('--max_samples', type=int, default=50000,
+                       help='Maximum number of parallel sentences to use (default: 50000)')
     args = parser.parse_args()
-    prepare_europarl_data(args.language_pair)
+    prepare_europarl_data(args.language_pair, args.max_samples)
 
