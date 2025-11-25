@@ -237,7 +237,7 @@ MULTISIMLEX_BENCHMARKS = {
 }
 
 
-def evaluate_multisimlex(model, tokenizer, device, language='en'):
+def evaluate_multisimlex(model, tokenizer, device, language='en', max_samples=None):
     """
     Evaluate on MultiSimLex-999 word similarity benchmark.
     
@@ -246,6 +246,7 @@ def evaluate_multisimlex(model, tokenizer, device, language='en'):
         tokenizer: Tokenizer instance
         device: Device to run on
         language: Language code ('en', 'fr', etc.)
+        max_samples: Maximum number of word pairs to evaluate (None = all)
     
     Returns:
         dict: Results with correlation, p-value, and benchmark comparison
@@ -276,9 +277,15 @@ def evaluate_multisimlex(model, tokenizer, device, language='en'):
     human_ratings = []
     skipped = 0
     
-    print(f"Processing {len(dataset['test'])} word pairs...")
+    # Limit dataset size if max_samples specified
+    test_data = dataset['test']
+    if max_samples is not None and max_samples < len(test_data):
+        test_data = test_data.select(range(min(max_samples, len(test_data))))
+        print(f"Using subset: {len(test_data)} word pairs (out of {len(dataset['test'])} total)")
+    else:
+        print(f"Processing {len(test_data)} word pairs...")
     
-    for item in dataset['test']:
+    for item in test_data:
         word1 = item['word1']
         word2 = item['word2']
         human_score = item['score']  # 0-10 scale
@@ -347,7 +354,7 @@ def evaluate_multisimlex(model, tokenizer, device, language='en'):
     }
 
 
-def evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1='en', lang2='fr'):
+def evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1='en', lang2='fr', max_samples=None):
     """
     Evaluate cross-lingual word similarity on MultiSimLex.
     Tests if translation pairs have high similarity.
@@ -358,6 +365,7 @@ def evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1='en', lan
         device: Device to run on
         lang1: First language code
         lang2: Second language code
+        max_samples: Maximum number of word pairs to evaluate (None = all)
     
     Returns:
         dict: Results with correlation, p-value, and benchmark comparison
@@ -384,9 +392,15 @@ def evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1='en', lan
     human_ratings = []
     skipped = 0
     
-    print(f"Processing {len(dataset['test'])} cross-lingual word pairs...")
+    # Limit dataset size if max_samples specified
+    test_data = dataset['test']
+    if max_samples is not None and max_samples < len(test_data):
+        test_data = test_data.select(range(min(max_samples, len(test_data))))
+        print(f"Using subset: {len(test_data)} word pairs (out of {len(dataset['test'])} total)")
+    else:
+        print(f"Processing {len(test_data)} cross-lingual word pairs...")
     
-    for item in dataset['test']:
+    for item in test_data:
         # MultiSimLex cross-lingual format may vary
         # Try different possible key names
         word1_key = f'word_{lang1}' if f'word_{lang1}' in item else 'word1'
