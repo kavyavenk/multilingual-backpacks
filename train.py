@@ -10,6 +10,7 @@ import math
 import pickle
 import argparse
 import json
+import numpy as np
 from contextlib import nullcontext
 from collections import defaultdict
 
@@ -73,7 +74,7 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
             X, Y = get_batch(split, data, block_size, batch_size, device, device_type)
             print("X bounds: ", X.min().item(), X.max().item())
             print("Y bounds: ", Y.min().item(), Y.max().item())
-            len_cap = min(X.size(1), Y.size(1), 512, model.config.n_positions)
+            len_cap = min(X.size(1), Y.size(1), 512, model.config.block_size)
             X = X[:, :len_cap].clamp(0, model.config.vocab_size - 1)
             Y = Y[:, :len_cap].clamp(0, model.config.vocab_size - 1)
             
@@ -236,6 +237,9 @@ def main():
         # Forward backward update
         X, Y = get_batch('train', train_data, config.block_size, config.batch_size, args.device, device_type)
         X, Y = X.to(args.device), Y.to(args.device)
+        # Clamp token IDs to valid vocabulary range
+        X = X.clamp(0, config.vocab_size - 1)
+        Y = Y.clamp(0, config.vocab_size - 1)
         with ctx:
             logits, loss = model(X, Y)
         
