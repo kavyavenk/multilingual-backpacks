@@ -7,7 +7,8 @@
     400,
     500,
     600,
-    700
+    700,
+    800
   ],
   "train_loss": [
     12.4442720413208,
@@ -17,7 +18,8 @@
     6.6618428230285645,
     6.325847148895264,
     5.945868968963623,
-    5.627598762512207
+    5.627598762512207,
+    5.348468780517578
   ],
   "val_loss": [
     12.443988800048828,
@@ -27,7 +29,8 @@
     6.709211349487305,
     6.341413497924805,
     5.988670825958252,
-    5.694277763366699
+    5.694277763366699,
+    5.431450366973877
   ],
   "top_activating_words": [
     {
@@ -852,6 +855,116 @@
           "token_id": 38474,
           "word": "pied",
           "activation": 0.2540156841278076
+        }
+      ]
+    },
+    {
+      "iteration": 800,
+      "words": [
+        {
+          "token_id": 148818,
+          "word": "lourd",
+          "activation": 0.2543700337409973
+        },
+        {
+          "token_id": 3066,
+          "word": "lang",
+          "activation": 0.2543525695800781
+        },
+        {
+          "token_id": 7,
+          "word": "s",
+          "activation": 0.25433939695358276
+        },
+        {
+          "token_id": 25443,
+          "word": "ology",
+          "activation": 0.2543385326862335
+        },
+        {
+          "token_id": 90,
+          "word": "es",
+          "activation": 0.2543378174304962
+        },
+        {
+          "token_id": 5036,
+          "word": "now",
+          "activation": 0.2543353736400604
+        },
+        {
+          "token_id": 186,
+          "word": "be",
+          "activation": 0.254334419965744
+        },
+        {
+          "token_id": 58745,
+          "word": "|",
+          "activation": 0.254332959651947
+        },
+        {
+          "token_id": 111,
+          "word": "of",
+          "activation": 0.2543320953845978
+        },
+        {
+          "token_id": 19911,
+          "word": "conform",
+          "activation": 0.2543313801288605
+        }
+      ]
+    },
+    {
+      "iteration": 850,
+      "words": [
+        {
+          "token_id": 70637,
+          "word": "sep",
+          "activation": 0.2535627484321594
+        },
+        {
+          "token_id": 4803,
+          "word": "dig",
+          "activation": 0.2535534203052521
+        },
+        {
+          "token_id": 10,
+          "word": "a",
+          "activation": 0.2535480856895447
+        },
+        {
+          "token_id": 70,
+          "word": "the",
+          "activation": 0.2535431981086731
+        },
+        {
+          "token_id": 58745,
+          "word": "|",
+          "activation": 0.2535422146320343
+        },
+        {
+          "token_id": 4803,
+          "word": "dig",
+          "activation": 0.2535396218299866
+        },
+        {
+          "token_id": 130523,
+          "word": "europ\u00e9en",
+          "activation": 0.253539502620697
+        },
+        {
+          "token_id": 12937,
+          "word": "document",
+          "activation": 0.2535383999347687
+        },
+        {
+          "token_id": 19183,
+          "word": "projet",
+          "activation": 0.2535378634929657
+        },
+        {
+          "token_id": 5,
+          "word": ".",
+          "activation": 0.2535373866558075
         }
       ]
     }
