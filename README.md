@@ -2,7 +2,7 @@
 
 This project implements multilingual Backpack Language Models for French-English, based on the nanoBackpackLM architecture. The project focuses on:
 
-1. Training small Backpack models from scratch on Hansards (French-English parallel data)
+1. Training small Backpack models from scratch on Europarl (French-English parallel data)
 2. Finetuning pre-trained Backpack models on multilingual data
 3. Evaluating multilingual word representation capabilities
 4. Analyzing sense vectors across languages
