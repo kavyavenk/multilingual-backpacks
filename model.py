@@ -193,7 +193,8 @@ class BackpackLM(nn.Module):
             sense_embs_chunk = sense_embs_chunk.view(B, end-start, self.n_senses, self.config.n_embd)
     
             # Weighted sum
-            x[:, start:end, :] = torch.einsum('btsd,bts->btd', sense_embs_chunk, weights_chunk)
+            x_chunk = torch.einsum('btsd,bts->btd', sense_embs_chunk, weights_chunk)
+            x_chunks.append(x_chunk)
         x = torch.cat(x_chunks, dim=1)
         
         # Weighted sum of sense vectors
