@@ -163,7 +163,7 @@ class BackpackLM(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx, targets=None):
+    def forward(self, idx, targets=None, chunk_size=32):
         B, T = idx.size()
         
         # Get sense embeddings for each token: (B, T, n_senses * n_embd)
