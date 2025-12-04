@@ -77,14 +77,14 @@ def load_model(out_dir, device):
     if not os.path.exists(ckpt_path):
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
     
-    checkpoint = torch.load(ckpt_path, map_location=device)
+    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
     config = checkpoint['config']
     
     model = BackpackLM(config)
     model.load_state_dict(checkpoint['model'])
     model.to(device)
     model.eval()
-    
+
     return model, config
 
 
