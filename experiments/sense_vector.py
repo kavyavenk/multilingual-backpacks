@@ -140,7 +140,7 @@ class SenseVectorExperiment:
                 
                 sense_predictions.append(top_tokens)
         
-        return sense_predictions
+            return sense_predictions
     
     def analyze_multilingual_senses(self, word_pairs):
         """
