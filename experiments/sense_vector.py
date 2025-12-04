@@ -163,7 +163,7 @@ class SenseVectorExperiment:
         
         return results
 
-
+'''
 def load_model(out_dir, device):
     """Load trained model"""
     import pickle
@@ -180,7 +180,7 @@ def load_model(out_dir, device):
     model.eval()
 
     return model, config
-
+'''
 
 def main():
     parser = argparse.ArgumentParser(description='Analyze sense vectors')
