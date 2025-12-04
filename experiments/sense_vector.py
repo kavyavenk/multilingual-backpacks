@@ -220,7 +220,7 @@ def main():
     
     # Test words
     print("\n=== English Word Sense Analysis ===")
-    english_words = ['hello', 'world', 'language', 'model', 'learning']
+    english_words = [' hello', ' world', ' language', ' model', ' learning']
     for word in english_words:
         print(f"\n# {word}")
         predictions = ex.sense_projection(word)
@@ -228,7 +228,7 @@ def main():
             print(f"Sense {sense_idx}: {preds}")
     
     print("\n=== French Word Sense Analysis ===")
-    french_words = ['bonjour', 'monde', 'langue', 'modèle', 'apprentissage']
+    french_words = [' bonjour', ' monde', ' langue', ' modèle', ' apprentissage']
     for word in french_words:
         print(f"\n# {word}")
         predictions = ex.sense_projection(word)
