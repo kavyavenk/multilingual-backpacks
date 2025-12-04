@@ -7,6 +7,7 @@ import math
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from torch.utils.checkpoint import checkpoint_sequential
 
 
 class CausalSelfAttention(nn.Module):
@@ -206,9 +207,8 @@ class BackpackLM(nn.Module):
         x = x + pos_emb.unsqueeze(0)
         x = self.drop(x)
         
-        for start in range(0, T, block_chunk_size):
-            end = min(start + block_chunk_size, T)
-            x[:, start:end, :] = self.blocks(x[:, start:end, :])
+        segments = 2
+        x = checkpoint_sequential(self.blocks, segments, x)
 
         x = self.ln_f(x)
         
