@@ -171,9 +171,7 @@ class BackpackLM(nn.Module):
         #sense_embs = sense_embs.view(B, T, self.n_senses, self.config.n_embd)
 
         token_embs = self.token_embedding(idx)            # (B, T, n_embd)
-        sense_embs = self.sense_layer(token_embs)         # (B, T, n_embd * n_senses)
-        sense_embs = sense_embs.view(B, T, self.n_senses, self.config.n_embd)
-
+       
         x = torch.zeros(B, T, self.config.n_embd, device=idx.device)
 
         # Get position embeddings
@@ -204,7 +202,7 @@ class BackpackLM(nn.Module):
         # sense_weights: (B, T, n_senses)
         #x = torch.einsum('btsd,bts->btd', sense_embs, sense_weights)  # (B, T, n_embd)
         
-        # Add position embeddings
+        # Add position embeddings, dropout
         x = x + pos_emb.unsqueeze(0)
         x = self.drop(x)
         
