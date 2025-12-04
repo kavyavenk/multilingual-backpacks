@@ -110,7 +110,18 @@ class BackpackLM(nn.Module):
 
         # Sense vectors: each word has n_senses sense vectors
         self.n_senses = getattr(config, 'n_senses', 16)
-        self.sense_embeddings = nn.Embedding(config.vocab_size, config.n_embd * self.n_senses)
+        #self.sense_embeddings = nn.Embedding(config.vocab_size, config.n_embd * self.n_senses)
+
+
+        self.token_embedding = nn.Embedding(config.vocab_size, config.n_embd)
+
+        self.sense_layer = nn.Sequential(
+            nn.Linear(config.n_embd, config.n_embd),
+            nn.GELU(),
+            nn.Linear(config.n_embd, config.n_embd * self.n_senses)
+        )
+
+
         
         # Sense predictor: predicts weights for each sense
         self.sense_predictor = nn.Sequential(
@@ -156,7 +167,11 @@ class BackpackLM(nn.Module):
         B, T = idx.size()
         
         # Get sense embeddings for each token: (B, T, n_senses * n_embd)
-        sense_embs = self.sense_embeddings(idx)  # (B, T, n_senses * n_embd)
+        #sense_embs = self.sense_embeddings(idx)  # (B, T, n_senses * n_embd)
+        #sense_embs = sense_embs.view(B, T, self.n_senses, self.config.n_embd)
+
+        token_embs = self.token_embedding(idx)            # (B, T, n_embd)
+        sense_embs = self.sense_layer(token_embs)         # (B, T, n_embd * n_senses)
         sense_embs = sense_embs.view(B, T, self.n_senses, self.config.n_embd)
         
         # Get position embeddings
