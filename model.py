@@ -187,7 +187,7 @@ class BackpackLM(nn.Module):
 
 
         for start in range(0, T, chunk_size):
-        end = min(start + chunk_size, T)
+            end = min(start + chunk_size, T)
             token_chunk = token_embs[:, start:end, :]             # (B, chunk, n_embd)
             weights_chunk = sense_weights[:, start:end, :]        # (B, chunk, n_senses)
     
