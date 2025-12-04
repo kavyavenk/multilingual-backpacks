@@ -263,7 +263,6 @@ The main model class implementing the Backpack architecture:
 
 #### 3. **Data Preparation** 
 - [x] Europarl data preparation script
-- [x] Hansards data preparation script (legacy)
 - [x] Tokenization with XLM-RoBERTa
 - [x] Train/val split creation
 - [x] Binary format for efficient loading
