@@ -8,7 +8,7 @@ import os
 import argparse
 import torch
 import torch.nn.functional as F
-from model import BackpackLM
+#from model import BackpackLM
 from transformers import AutoTokenizer, AutoModelForCausalLM 
 
 
