@@ -23,6 +23,12 @@ from model import BackpackLM, StandardTransformerLM
 from configurator import ModelConfig, get_config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+g_drive_model_path = "/content/drive/MyDrive/best_model_weights.pt"
+
 # Optional import for BackpackTokenizer (only needed for pretrained models)
 try:
     from tokenization_backpack import BackpackTokenizer
@@ -233,6 +239,12 @@ def main():
                     }
                     os.makedirs(args.out_dir, exist_ok=True)
                     torch.save(checkpoint, os.path.join(args.out_dir, 'ckpt.pt'))
+                    print("model saved w in runtime")
+
+                    torch.save(checkpoint, g_drive_model_path)
+                    print(f"google drive model path: {g_drive_model_path}")
+
+        
         
         # Forward backward update
         X, Y = get_batch('train', train_data, config.block_size, config.batch_size, args.device, device_type)
