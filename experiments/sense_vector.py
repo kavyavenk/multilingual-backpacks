@@ -41,10 +41,9 @@ class SenseVectorExperiment:
             for sense_idx in range(sense_vectors.shape[0]):
                 sense_vec = sense_vectors[sense_idx].unsqueeze(0)  # (1, n_embd)
                 logits = self.model.lm_head(sense_vec)  # (1, vocab_size)
-                probs = F.softmax(logits, dim=-1)
                 
                 # Get top-k predictions
-                top_probs, top_indices = torch.topk(probs, top_k, dim=-1)
+                top_logits, top_indices = torch.topk(logits, top_k, dim=-1)
                 top_tokens = [self.tokenizer.decode([idx.item()]) for idx in top_indices[0]]
                 sense_predictions.append(top_tokens)
         
