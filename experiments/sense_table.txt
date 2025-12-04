@@ -1,0 +1,56 @@
+========================================================================================================================
+Table: Visualization of how the same sense index across many words encodes
+fine-grained notions of meaning, relatedness, and predictive utility
+========================================================================================================================
+
+Sense 0 (Relatedness)
+  Morphologically related words, synonyms, and semantic variants
+------------------------------------------------------------------------------------------------------------------------
+
+       Apple / Pomme         |    appreciate / apprécier    |       believe / croire       |      build / construire      |    importance / interest     |     intérêt / parliament     |      parlement / pizza       |     quickly / rapidement     |      tasty / délicieux      
+------------------------------------------------------------------------------------------------------------------------
+        / Commission         |             / is             |           la / of            |          the / have          |        of / Président        |         intérêt / la         |              /               |           of / to            |        Commission /         
+           / États           |             / and            |          that / to           |          this / le           |         to / States          |         membres / le         |              /               |          and / have          |            Je /             
+          / Conseil          |             / to             |           to / and           |         these / the          |       Je / Commission        |       essentiel / les        |              /               |           is / of            |         Parlement /         
+         / Président         |             / of             |           the / on           |           we / we            |        The / Conseil         |    particulièrement / ce     |              /               |           et / are           |            Il /             
+            / le             |             / in             |         de / States          |         le / believe         |       This / Parlement       |        Commun / nous         |              /               |           in / is            |         Président /         
+
+
+Sense 1 (Proper Noun Associations)
+  Proper nouns, entities, and named entities
+------------------------------------------------------------------------------------------------------------------------
+
+       Apple / Pomme         |    appreciate / apprécier    |       believe / croire       |      build / construire      |    importance / interest     |     intérêt / parliament     |      parlement / pizza       |     quickly / rapidement     |      tasty / délicieux      
+------------------------------------------------------------------------------------------------------------------------
+       Commission /          |           we / is            |          that / de           |           the / de           |           of / to            |         Commun / la          |         membres / of         |           of / de            |              /              
+           In /              |          the / The           |           the / of           | Commission / particulièrement |           la / the           |        essentiel / le        |           of / des           |          and / des           |              /              
+           Il /              |           it / de            |          this / le           |           is / Je            |           to / of            |    particulièrement / les    |         intérêt / in         |          that / les          |              /              
+           Le /              |          have / Il           |           to / des           |         this / Nous          |          nous / in           |         intérêt / ce         |    particulièrement / la     |           la / et            |              /              
+           The /             |           of / It            |           of / les           |           be / The           |          les / this          |       dimension / nous       |           et / de            |           in / le            |              /              
+
+
+Sense 2 (Next Wordpiece)
+  Likely next wordpieces/subword tokens
+------------------------------------------------------------------------------------------------------------------------
+
+       Apple / Pomme         |    appreciate / apprécier    |       believe / croire       |      build / construire      |    importance / interest     |     intérêt / parliament     |      parlement / pizza       |     quickly / rapidement     |      tasty / délicieux      
+------------------------------------------------------------------------------------------------------------------------
+             /               |           the / is           |       the / President        |          the / that          |           of / la            |        essentiel / la        |           de / We            |           la / is            |         Parlement /         
+             /               |           be / has           |           that /             |           to / to            |           to / le            |        dimension / le        |           et / Je            |        les / membres         |            Je /             
+             /               |          this / in           |            to /              |          this / be           |         and / cette          |    particulièrement / les    |           du / The           |        le / President        |              /              
+             /               |          been / et           |           this /             |           it / la            |           la / of            |         intérêt / ce         |          The / Nous          |         ce / States          |              /              
+             /               |           an / est           |            we /              |          in / with           |          the / been          |        Commun / cette        |           Il / La            |           of / par           |              /              
+
+
+Sense 3 (Verb Objects, nmod Nouns)
+  Words that function as objects of verbs or noun modifiers
+------------------------------------------------------------------------------------------------------------------------
+
+       Apple / Pomme         |    appreciate / apprécier    |       believe / croire       |      build / construire      |    importance / interest     |     intérêt / parliament     |      parlement / pizza       |     quickly / rapidement     |      tasty / délicieux      
+------------------------------------------------------------------------------------------------------------------------
+            / the            |           the / is           |           the / de           |             / the            |           of / de            |        essentiel / le        |        We / President        |           to / la            |         Was / States        
+        / Commission         |          this / the          |          that / le           |             / la             |           de / to            |    particulièrement / la     |          The / the           |           but / to           |             / est           
+           / this            |          it / this           |           de / is            |             / de             |           and / et           |         Commun / les         |           It / la            |          of / that           |             / une           
+            / be             |       be / Commission        |          in / have           |            / this            |           sur / of           |        dimension / ce        |          In / this           |          for / nous          |           / intérêt         
+            / to             |           we / be            |          this / et           |             / we             |           et / des           |        intérêt / nous        |         membres / it         |           un / the           |             / un            
+
