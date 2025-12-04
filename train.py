@@ -149,6 +149,7 @@ def main():
         else:
             model = BackpackLM(config)
         model.load_state_dict(checkpoint['model'])
+        print(f"Resumed from checkpoint at iteration {checkpoint.get('iter_num', 0)}")
     elif args.init_from == 'backpack-small':
         # Load pretrained Backpack model (if available)
         print("Loading pretrained Backpack")
@@ -191,18 +192,43 @@ def main():
     
     # Training loop
     print("Starting training...")
-    iter_num = 0
-    best_val_loss = 1e9
     
     # Initialize JSON log file for loss curves
     log_file = os.path.join(args.out_dir, 'training_log.json')
     os.makedirs(args.out_dir, exist_ok=True)
-    training_log = {
-        'iterations': [],
-        'train_loss': [],
-        'val_loss': [],
-        'top_activating_words': []  # Will store periodically
-    }
+    
+    # Resume from checkpoint if applicable
+    if args.init_from == 'resume':
+        iter_num = checkpoint.get('iter_num', 0)
+        best_val_loss = checkpoint.get('best_val_loss', 1e9)
+        optimizer.load_state_dict(checkpoint.get('optimizer', optimizer.state_dict()))
+        print(f"Resumed: iter_num={iter_num}, best_val_loss={best_val_loss:.4f}")
+        
+        # Load training log from checkpoint if available, otherwise from file
+        if 'training_log' in checkpoint:
+            training_log = checkpoint['training_log']
+            print(f"Loaded training log from checkpoint with {len(training_log.get('iterations', []))} entries")
+        elif os.path.exists(log_file):
+            with open(log_file, 'r') as f:
+                training_log = json.load(f)
+            print(f"Loaded training log from file with {len(training_log.get('iterations', []))} entries")
+        else:
+            training_log = {
+                'iterations': [],
+                'train_loss': [],
+                'val_loss': [],
+                'top_activating_words': []
+            }
+            print("Starting fresh training log")
+    else:
+        iter_num = 0
+        best_val_loss = 1e9
+        training_log = {
+            'iterations': [],
+            'train_loss': [],
+            'val_loss': [],
+            'top_activating_words': []  # Will store periodically
+        }
     
     # Load tokenizer for top activating words analysis (if Backpack model)
     tokenizer = None
@@ -228,22 +254,36 @@ def main():
             with open(log_file, 'w') as f:
                 json.dump(training_log, f, indent=2)
             
+            # Save checkpoint on best validation loss
+            checkpoint_reason = None
             if losses['val'] < best_val_loss:
                 best_val_loss = losses['val']
-                if iter_num > 0:
-                    checkpoint = {
-                        'model': model.state_dict(),
-                        'optimizer': optimizer.state_dict(),
-                        'config': config,
-                        'iter_num': iter_num,
-                        'best_val_loss': best_val_loss,
-                    }
-                    os.makedirs(args.out_dir, exist_ok=True)
-                    torch.save(checkpoint, os.path.join(args.out_dir, 'ckpt.pt'))
-                    print("model saved w in runtime")
+                checkpoint_reason = "best_val_loss"
+            # Also save periodically (every 5 evaluation intervals) to prevent data loss
+            elif iter_num > 0 and iter_num % (config.eval_interval * 5) == 0:
+                checkpoint_reason = "periodic"
+            
+            if checkpoint_reason and iter_num > 0:
+                checkpoint = {
+                    'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'config': config,
+                    'iter_num': iter_num,
+                    'best_val_loss': best_val_loss,
+                    'training_log': training_log,  # Save training log in checkpoint
+                }
+                os.makedirs(args.out_dir, exist_ok=True)
+                ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
+                torch.save(checkpoint, ckpt_path)
+                print(f"✓ Checkpoint saved ({checkpoint_reason}) at iteration {iter_num}")
 
-                    torch.save(checkpoint, g_drive_model_path)
-                    print(f"google drive model path: {g_drive_model_path}")
+                # Also save to Google Drive if path exists (for Colab)
+                if os.path.exists(os.path.dirname(g_drive_model_path)):
+                    try:
+                        torch.save(checkpoint, g_drive_model_path)
+                        print(f"✓ Also saved to Google Drive: {g_drive_model_path}")
+                    except:
+                        pass
 
         
         

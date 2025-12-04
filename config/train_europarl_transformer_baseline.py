@@ -19,7 +19,7 @@ config = ModelConfig(
     # Training (same as Backpack scratch config)
     batch_size=32,  # Adjust based on GPU memory
     learning_rate=3e-4,
-    max_iters=10000,  # Adjust based on convergence
+    max_iters=50000,  # Train as much as possible - can resume from checkpoints
     weight_decay=1e-1,
     beta1=0.9,
     beta2=0.95,
