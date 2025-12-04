@@ -33,7 +33,7 @@ class SenseVectorExperiment:
             return []
         
         token_id = torch.tensor([tokens[0]], device=self.device).unsqueeze(0)
-        sense_vectors = self.model.get_input_embeddings()(token_id)  # (1,1,embd_dim)
+        sense_vectors = self.model.wte(token_id)  # (1,1,embd_dim)
         #sense_vectors = self.model.get_sense_vectors(token_id)  # (1, 1, n_senses, n_embd)
         sense_vectors = sense_vectors.squeeze(0).squeeze(0)  # (n_senses, n_embd)
         
