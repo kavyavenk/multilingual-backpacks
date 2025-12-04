@@ -9,7 +9,7 @@ import argparse
 import torch
 import torch.nn.functional as F
 from model import BackpackLM
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM 
 
 
 class SenseVectorExperiment:
@@ -33,7 +33,8 @@ class SenseVectorExperiment:
             return []
         
         token_id = torch.tensor([tokens[0]], device=self.device).unsqueeze(0)
-        sense_vectors = self.model.get_sense_vectors(token_id)  # (1, 1, n_senses, n_embd)
+        sense_vectors = model.transformer.wte(token_id)  # (1,1,embd_dim)
+        #sense_vectors = self.model.get_sense_vectors(token_id)  # (1, 1, n_senses, n_embd)
         sense_vectors = sense_vectors.squeeze(0).squeeze(0)  # (n_senses, n_embd)
         
         sense_predictions = []
@@ -194,17 +195,25 @@ def main():
     if device == 'cuda' and not torch.cuda.is_available():
         device = 'cpu'
         print("CUDA not available, using CPU")
+
     
+    model_name = "stanfordnlp/backpack-gpt2"
+    model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+    model.to(device)
+    model.eval()
+    
+        
     # Load model
-    print(f"Loading model from {args.out_dir}...")
-    model, config = load_model(args.out_dir, device)
+    #print(f"Loading model from {args.out_dir}...")
+    #model, config = load_model(args.out_dir, device)
     
     if args.compile:
         print("Compiling model...")
         model = torch.compile(model)
     
     # Load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
+    #tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
+    tokenizer = AutoTokenizer.from_pretrained("gpt-2")
     
     # Initialize experiment
     ex = SenseVectorExperiment(model, tokenizer, device)
