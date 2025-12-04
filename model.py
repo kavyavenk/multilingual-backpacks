@@ -172,8 +172,6 @@ class BackpackLM(nn.Module):
         #sense_embs = sense_embs.view(B, T, self.n_senses, self.config.n_embd)
 
         token_embs = self.token_embedding(idx)            # (B, T, n_embd)
-       
-        x = torch.zeros(B, T, self.config.n_embd, device=idx.device)
 
         # Get position embeddings
         pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
@@ -184,7 +182,7 @@ class BackpackLM(nn.Module):
         sense_weights = self.sense_predictor(context)  # (B, T, n_senses)
         sense_weights = F.softmax(sense_weights, dim=-1)  # (B, T, n_senses)
 
-
+        x_chunks=[]
         for start in range(0, T, chunk_size):
             end = min(start + chunk_size, T)
             token_chunk = token_embs[:, start:end, :]             # (B, chunk, n_embd)
@@ -196,7 +194,7 @@ class BackpackLM(nn.Module):
     
             # Weighted sum
             x[:, start:end, :] = torch.einsum('btsd,bts->btd', sense_embs_chunk, weights_chunk)
-
+        x = torch.cat(x_chunks, dim=1
         
         # Weighted sum of sense vectors
         # sense_embs: (B, T, n_senses, n_embd)
@@ -208,7 +206,7 @@ class BackpackLM(nn.Module):
         x = self.drop(x)
         
         segments = 2
-        x = checkpoint_sequential(self.blocks, segments, x)
+        x = checkpoint_sequential(self.blocks, segments, x, use_reentrant=False)
 
         x = self.ln_f(x)
         
