@@ -148,6 +148,8 @@ def main():
             model = StandardTransformerLM(config)
         else:
             model = BackpackLM(config)
+        # Move model to device BEFORE loading state dict to avoid device mismatch
+        model.to(args.device)
         model.load_state_dict(checkpoint['model'])
         print(f"Resumed from checkpoint at iteration {checkpoint.get('iter_num', 0)}")
     elif args.init_from == 'backpack-small':
