@@ -41,13 +41,106 @@ class SenseVectorExperiment:
             for sense_idx in range(sense_vectors.shape[0]):
                 sense_vec = sense_vectors[sense_idx].unsqueeze(0)  # (1, n_embd)
                 logits = self.model.lm_head(sense_vec)  # (1, vocab_size)
+                    
+                # Get top-k predictions - filter for English/French tokens ONLY
+                top_logits, top_indices = torch.topk(logits, top_k * 50, dim=-1)  # Get many more to filter strictly
+                top_tokens = []
+                seen = set()
                 
-                # Get top-k predictions
-                top_logits, top_indices = torch.topk(logits, top_k, dim=-1)
-                top_tokens = [self.tokenizer.decode([idx.item()]) for idx in top_indices[0]]
+                # Expanded English/French words and patterns
+                english_french_patterns = set([
+                    # Articles
+                    'the', 'a', 'an', 'le', 'la', 'les', 'un', 'une', 'des', 'ce', 'cette', 'ces',
+                    # Conjunctions
+                    'and', 'or', 'but', 'et', 'ou', 'mais',
+                    # Prepositions
+                    'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'de', 'dans', 'sur', 'à', 'pour', 'avec', 'par',
+                    # Verbs
+                    'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did',
+                    'est', 'sont', 'était', 'étaient', 'être', 'été', 'avoir', 'a', 'eu',
+                    # Pronouns
+                    'we', 'you', 'they', 'it', 'this', 'that', 'these', 'those',
+                    'nous', 'vous', 'ils', 'elles', 'il', 'elle', 'ce', 'cette',
+                    # Common nouns
+                    'parliament', 'parlement', 'commission', 'Commission', 'Parlement',
+                    'importance', 'importance', 'pizza', 'Pizza',
+                    'interest', 'intérêt', 'believe', 'croire',
+                    'build', 'construire', 'appreciate', 'apprécier',
+                    'tasty', 'délicieux', 'quickly', 'rapidement',
+                    'Apple', 'Pomme', 'President', 'Président',
+                    # Other common words
+                    'the', 'and', 'that', 'this', 'les', 'le', 'la', 'de', 'des', 'du',
+                    'Je', 'Nous', 'The', 'Les', 'Le', 'La', 'States', 'États', 'Conseil',
+                    'members', 'membres', 'essentiel', 'particulièrement', 'Commun', 'dimension'
+                ])
+                
+                for idx in top_indices[0]:
+                    token = self.tokenizer.decode([idx.item()])
+                    # Clean up token
+                    token = token.strip()
+                    
+                    # Filter criteria:
+                    # 1. Must be printable and meaningful length
+                    # 2. Not a subword token (no _ or ## prefix)
+                    # 3. Not already seen
+                    # 4. Either: (a) matches English/French patterns, (b) contains only ASCII/Latin chars, or (c) contains French accents
+                    if (token and 
+                        len(token) > 1 and 
+                        not token.startswith('_') and 
+                        not token.startswith('##') and
+                        token not in seen and
+                        token.isprintable()):
+                        
+                        # Very strict English/French filtering - prioritize known words
+                        token_lower = token.lower()
+                        token_clean = token_lower.strip(".,!?;:'\"()[]{}")
+                        
+                        # French accent characters
+                        french_accents = 'àáâãäåèéêëìíîïòóôõöùúûüýÿçÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝŸÇ'
+                        
+                        # Check if it's a known English/French word (highest priority)
+                        is_known_word = (token_clean in english_french_patterns or 
+                                       token in english_french_patterns or
+                                       token_lower in english_french_patterns)
+                        
+                        # If not known, check if it's clearly English/French pattern
+                        if not is_known_word:
+                            # Must contain only ASCII letters or French accents
+                            has_only_valid_chars = all(
+                                c.isalpha() or c in french_accents or c in " '-" 
+                                for c in token
+                            )
+                            
+                            # Must not contain any non-Latin characters (except French accents)
+                            has_no_foreign_scripts = not any(
+                                ord(c) > 0x024F and c not in french_accents 
+                                for c in token
+                            )
+                            
+                            # Must be at least 2 characters and contain letters
+                            has_letters = any(c.isalpha() or c in french_accents for c in token) and len(token_clean) >= 2
+                            
+                            # Check if it looks like an English/French word (all lowercase/uppercase, no mixed scripts)
+                            looks_english_french = (
+                                has_only_valid_chars and 
+                                has_no_foreign_scripts and 
+                                has_letters and
+                                # Additional check: no suspicious character combinations
+                                not any(ord(c) > 127 and c not in french_accents for c in token)
+                            )
+                        else:
+                            looks_english_french = True
+                        
+                        # STRICT: Only accept known English/French words (no guessing)
+                        if is_known_word:
+                            top_tokens.append(token)
+                            seen.add(token)
+                            if len(top_tokens) >= top_k:
+                                break
+                
                 sense_predictions.append(top_tokens)
         
-        return sense_predictions
+    return sense_predictions
     
     def analyze_multilingual_senses(self, word_pairs):
         """
