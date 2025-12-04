@@ -131,6 +131,11 @@ def main():
             print("Standard Transformer initialized (scratch)")
         else:
             print("Backpack from scratch")
+            print(config.vocab_size)
+            print(config.n_layer)
+            print(config.n_head)
+            print(config.n_embd)
+            print(config.n_senses)
             model = BackpackLM(config)
             print("Backpack initialized (scratch)")
     elif args.init_from == 'resume':
