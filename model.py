@@ -206,8 +206,10 @@ class BackpackLM(nn.Module):
         x = x + pos_emb.unsqueeze(0)
         x = self.drop(x)
         
-        # Apply transformer blocks (this will provide better context for sense prediction)
-        x = self.blocks(x)
+        for start in range(0, T, block_chunk_size):
+            end = min(start + block_chunk_size, T)
+            x[:, start:end, :] = self.blocks(x[:, start:end, :])
+
         x = self.ln_f(x)
         
         if targets is not None:
