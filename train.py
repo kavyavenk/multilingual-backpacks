@@ -23,10 +23,6 @@ from model import BackpackLM, StandardTransformerLM
 from configurator import ModelConfig, get_config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-
-from google.colab import drive
-drive.mount('/content/drive')
-
 g_drive_model_path = "/content/drive/MyDrive/best_model_weights.pt"
 
 # Optional import for BackpackTokenizer (only needed for pretrained models)
