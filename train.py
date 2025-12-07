@@ -260,8 +260,8 @@ def main():
 
             # Log to JSON file
             training_log['iterations'].append(iter_num)
-            training_log['train_loss'].append(float(losses['train'].item()))
-            training_log['val_loss'].append(float(losses['val'].item()))
+            training_log['train_loss'].append(losses['train'])
+            training_log['val_loss'].append(losses['val'])
             
             # Save log file
             with open(log_file, 'w') as f:
