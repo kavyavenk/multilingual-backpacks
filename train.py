@@ -76,7 +76,7 @@ def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_siz
     for split in ['train', 'val']:
         losses = torch.zeros(eval_iters)
         data = train_data if split == 'train' else val_data
-        for k in range(eval_iters):
+        for k in range(eval_iters):f
             X, Y = get_batch(split, data, block_size, safe_eval_batch, device, device_type)
             print("token id bounds: ", X.min().item(), X.max().item())
            
@@ -252,10 +252,12 @@ def main():
     while True:
         # Evaluate
         if iter_num % config.eval_interval == 0:
-             losses = estimate_loss(model, config.eval_iters, train_data, val_data, 
-                                  config.block_size, config.batch_size, args.device, device_type, ctx)
+            losses = estimate_loss(
+                model, config.eval_iters, train_data, val_data, 
+                config.block_size, config.batch_size, args.device, device_type, ctx
+            )
             print(f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
-            
+
             # Log to JSON file
             training_log['iterations'].append(iter_num)
             training_log['train_loss'].append(float(losses['train'].item()))
