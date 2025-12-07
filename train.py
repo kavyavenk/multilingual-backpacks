@@ -65,25 +65,34 @@ def load_data(data_dir):
 
 
 @torch.no_grad()
-def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_size, device, device_type):
+def estimate_loss(model, eval_iters, train_data, val_data, block_size, batch_size, device, device_type, ctx):
     """Estimate loss on train and val sets"""
     out = {}
     model.eval()
+
+
+    safe_max_eval_len = min(512, getattr(model.config, "block_size", 512))
+    safe_eval_batch = max(1, min(batch_size, 2))
     for split in ['train', 'val']:
         losses = torch.zeros(eval_iters)
         data = train_data if split == 'train' else val_data
         for k in range(eval_iters):
-            X, Y = get_batch(split, data, block_size, batch_size, device, device_type)
-            print("X bounds: ", X.min().item(), X.max().item())
-            print("Y bounds: ", Y.min().item(), Y.max().item())
-            len_cap = min(X.size(1), Y.size(1), 512, model.config.block_size)
+            X, Y = get_batch(split, data, block_size, safe_eval_batch, device, device_type)
+            print("token id bounds: ", X.min().item(), X.max().item())
+           
+            len_cap = min(X.size(1), Y.size(1), 512, safe_max_eval_len)
             X = X[:, :len_cap].clamp(0, model.config.vocab_size - 1)
             Y = Y[:, :len_cap].clamp(0, model.config.vocab_size - 1)
+
+            with ctx:
+                logits, loss = model(X.to(device), Y.to(device))
+                
+            losses[k] = float(loss.item())
+
+            if device_type == 'cuda':
+                torch.cuda.empty_cache()
             
-            logits, loss = model(X, Y)
-            losses[k] = loss.item()
-            
-        out[split] = losses.mean()
+        out[split] = float(losses.mean().item())
     model.train()
     return out
 
@@ -243,8 +252,8 @@ def main():
     while True:
         # Evaluate
         if iter_num % config.eval_interval == 0:
-            losses = estimate_loss(model, config.eval_iters, train_data, val_data, 
-                                  config.block_size, config.batch_size, args.device, device_type)
+             losses = estimate_loss(model, config.eval_iters, train_data, val_data, 
+                                  config.block_size, config.batch_size, args.device, device_type, ctx)
             print(f"step {iter_num}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
             
             # Log to JSON file
