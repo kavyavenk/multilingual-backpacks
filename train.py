@@ -20,6 +20,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
 from model import BackpackLM, StandardTransformerLM
+import configurator
 from configurator import ModelConfig, get_config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -152,7 +153,8 @@ def main():
         print("About to load ckpt")
         ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
         print("Loading ckpt")
-        checkpoint = torch.load(ckpt_path, map_location=args.device)
+        with torch.serialization.safe_globals([configurator.ModelConfig]):
+            checkpoint = torch.load(ckpt_path, map_location=args.device)
         if is_transformer_baseline:
             model = StandardTransformerLM(config)
         else:
