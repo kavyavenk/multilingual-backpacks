@@ -18,7 +18,7 @@ config = ModelConfig(
     # Training (from train_backpack_clean)
     batch_size=8,  # Smaller batch size for memory efficiency
     learning_rate=3e-4,
-    max_iters=50000,  # Train as much as possible - can resume from checkpoints
+    max_iters=100000,  # Train as much as possible - can resume from checkpoints
     weight_decay=1e-1,
     beta1=0.9,
     beta2=0.95,
