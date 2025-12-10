@@ -379,6 +379,16 @@ def _is_english_or_french(token_str):
         'festivala', 'etiladi', 'czy', 'zwraca', 'hverandre', 'mne', 'levy',
         'procure', 'jer', 'potpis', 'hisar', 'Magic', 'kende', 'makan',
         'kekurangan', 'caminho', 'ajam', 'Abbiamo', 'umjetni',
+        # Additional problematic words found in semantic relatedness output
+        'landi', 'Landi', 'LANDI',  # Albanian/Italian (land)
+        'Budi', 'budi', 'BUDI',  # Indonesian (Buddha/be)
+        'suhbat', 'Suhbat', 'SUHBAT',  # Uzbek/Turkish (conversation)
+        'kork', 'Kork', 'KORK',  # Turkish (fear)
+        'torial', 'Torial', 'TORIAL',  # Various languages (editorial fragment)
+        'korku', 'korkular',  # Turkish (fears)
+        'suhbati', 'suhbatlar',  # Uzbek (conversations)
+        'budil', 'budili',  # Various Slavic (wake)
+        'landia', 'landija',  # Various languages
         # Common fragments/subwords that aren't English/French
         'λερ', 'Farg', 'vi', 'cy', 'ster', 'che', 'hui', 'élé', 'da', 'crai'
     }
@@ -818,16 +828,29 @@ def analyze_sense_vectors(model, tokenizer, words, device, top_k=5, verbose=True
                         
                         related_words = []
                         checked_count = 0
-                        max_checks = 20000  # Check more tokens to find English/French ones
+                        max_checks = 50000  # Check even more tokens to find English/French ones
+                        seen_words = set()  # Track seen words to avoid duplicates
                         for sim, token_id in all_pairs:
                             checked_count += 1
                             token_str = tokenizer.decode([token_id]).strip()
+                            
+                            # Skip empty tokens
+                            if not token_str:
+                                continue
+                            
+                            # Normalize: lowercase for comparison, but keep original case
+                            token_str_lower = token_str.lower()
+                            
+                            # Skip duplicates (case-insensitive)
+                            if token_str_lower in seen_words:
+                                continue
                             
                             # STRICT filtering: must be meaningful AND English/French
                             if not _filter_meaningful_tokens(token_str):
                                 continue
                             
                             # CRITICAL: Filter to English/French only - remove all other languages
+                            # This is the most important check - must pass before adding
                             if not _is_english_or_french(token_str):
                                 continue
                             
@@ -841,6 +864,15 @@ def analyze_sense_vectors(model, tokenizer, words, device, top_k=5, verbose=True
                             if not token_str_clean:
                                 continue
                             
+                            # Additional validation: ensure it looks like a real word
+                            # Must have at least 2 letters (allow single letters like 'a', 'I')
+                            if len(token_str_clean) > 1:
+                                # For multi-character tokens, ensure it has at least one letter
+                                if not re.search(r'[a-zA-ZàâäçèéêëîïôùûüÿÀÂÄÇÈÉÊËÎÏÔÙÛÜŸ]', token_str_clean):
+                                    continue
+                            
+                            # All checks passed - add to results
+                            seen_words.add(token_str_lower)
                             related_words.append((token_str_clean, sim))
                             if len(related_words) >= 10:  # Stop once we have enough
                                 break
