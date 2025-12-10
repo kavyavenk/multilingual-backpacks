@@ -31,6 +31,8 @@ def load_model(out_dir, device):
     
     with torch.serialization.safe_globals([ModelConfig]):
         checkpoint = torch.load(ckpt_path, map_location=device)
+
+    config = checkpoint['config']
     
     # Determine model type based on config or checkpoint
     is_transformer = hasattr(config, 'n_senses') and config.n_senses == 1
