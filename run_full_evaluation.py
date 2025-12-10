@@ -14,7 +14,8 @@ from evaluate import (
     analyze_sense_vectors,
     load_test_data,
     evaluate_translation_bleu,
-    evaluate_translation_accuracy
+    evaluate_translation_accuracy,
+    evaluate_sentence_similarity
 )
 from transformers import AutoTokenizer
 
@@ -173,7 +174,59 @@ def main():
     else:
         print("\n3. TRANSLATION EVALUATION (BLEU & ACCURACY) - SKIPPED")
     
-    # 4. Summary
+    # 4. Sentence-Level Similarity Evaluation
+    if not args.skip_translation and test_pairs:
+        print("\n" + "="*70)
+        print("4. SENTENCE-LEVEL SIMILARITY EVALUATION")
+        print("="*70)
+        
+        try:
+            print("\nEvaluating cross-lingual sentence similarity...")
+            # Use first 100 pairs for sentence similarity (faster)
+            sentence_pairs = test_pairs[:min(100, len(test_pairs))]
+            sent_similarities = evaluate_sentence_similarity(model, tokenizer, sentence_pairs, args.device, method='mean')
+            
+            if sent_similarities:
+                similarities = [sim for _, _, sim in sent_similarities]
+                avg_sim = sum(similarities) / len(similarities) if similarities else 0.0
+                min_sim = min(similarities) if similarities else 0.0
+                max_sim = max(similarities) if similarities else 0.0
+                
+                print(f"\nResults:")
+                print(f"  Number of pairs evaluated: {len(sent_similarities)}")
+                print(f"  Average cosine similarity: {avg_sim:.4f}")
+                print(f"  Min similarity: {min_sim:.4f}")
+                print(f"  Max similarity: {max_sim:.4f}")
+                
+                # Interpretation
+                if avg_sim > 0.70:
+                    print(f"  ✓ EXCELLENT: Strong cross-lingual sentence alignment")
+                elif avg_sim > 0.50:
+                    print(f"  ○ GOOD: Moderate cross-lingual sentence alignment")
+                elif avg_sim > 0.30:
+                    print(f"  ⚠ WEAK: Poor cross-lingual sentence alignment")
+                else:
+                    print(f"  ✗ FAILED: No meaningful cross-lingual sentence alignment")
+                
+                results['sentence_similarity'] = {
+                    'avg_similarity': float(avg_sim),
+                    'min_similarity': float(min_sim),
+                    'max_similarity': float(max_sim),
+                    'n_pairs': len(sent_similarities),
+                    'method': 'mean_pooling'
+                }
+            else:
+                print("  No sentence similarities computed")
+                results['sentence_similarity'] = None
+        except Exception as e:
+            print(f"  ERROR in sentence similarity evaluation: {e}")
+            import traceback
+            traceback.print_exc()
+            results['sentence_similarity'] = None
+    else:
+        print("\n4. SENTENCE-LEVEL SIMILARITY EVALUATION - SKIPPED (no test data)")
+    
+    # 5. Summary
     print("\n" + "="*70)
     print("EVALUATION SUMMARY")
     print("="*70)
@@ -219,6 +272,13 @@ def main():
         print(f"  Exact match rate: {acc['exact_match_rate']:.4f} ({acc['exact_matches']}/{acc['n_pairs']})")
         print(f"  Word-level accuracy: {acc['avg_word_accuracy']:.4f}")
         print(f"  Character-level accuracy: {acc['avg_char_accuracy']:.4f}")
+    
+    if results.get('sentence_similarity') is not None:
+        print(f"\nSentence-Level Similarity:")
+        sent = results['sentence_similarity']
+        print(f"  Average cosine similarity: {sent['avg_similarity']:.4f}")
+        print(f"  Range: {sent['min_similarity']:.4f} - {sent['max_similarity']:.4f}")
+        print(f"  Pairs evaluated: {sent['n_pairs']}")
     
     # Save results
     output_file = os.path.join(args.out_dir, 'evaluation_results.json')

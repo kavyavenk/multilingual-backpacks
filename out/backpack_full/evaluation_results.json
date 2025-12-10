@@ -1,0 +1,157 @@
+{
+  "sense_analysis": "10 words analyzed",
+  "multisimlex_en": {
+    "correlation": -0.0029498653417206555,
+    "p_value": 0.9913493247499718,
+    "n_pairs": 16,
+    "skipped": 0,
+    "method": "fallback"
+  },
+  "multisimlex_fr": {
+    "correlation": 0.30007792595709065,
+    "p_value": 0.25880669910850645,
+    "n_pairs": 16,
+    "skipped": 0,
+    "method": "fallback"
+  },
+  "multisimlex_en_fr": null,
+  "translation_bleu": {
+    "n_pairs": 500,
+    "avg_bleu": 0.20006600723580348,
+    "median_bleu": 0.19047619047619047,
+    "std_bleu": 0.15098592671306113,
+    "min_bleu": 0.0,
+    "max_bleu": 0.75,
+    "sacrebleu": null,
+    "individual_scores": [
+      0.17857142857142858,
+      0.3448275862068966,
+      0.21739130434782608,
+      0.2,
+      0.2631578947368421,
+      0.38095238095238093,
+      0.4642857142857143,
+      0.2222222222222222,
+      0.391304347826087,
+      0.10344827586206896
+    ]
+  },
+  "translation_accuracy": {
+    "n_pairs": 500,
+    "exact_match_rate": 0.0,
+    "exact_matches": 0,
+    "avg_word_accuracy": 0.20006600723580348,
+    "avg_char_accuracy": 0.5909913598558081,
+    "word_accuracies": [
+      0.17857142857142858,
+      0.3448275862068966,
+      0.21739130434782608,
+      0.2,
+      0.2631578947368421,
+      0.38095238095238093,
+      0.4642857142857143,
+      0.2222222222222222,
+      0.391304347826087,
+      0.10344827586206896
+    ],
+    "debug_examples": [
+      {
+        "source": "It is now the case that the level of distrust between the two sides is such that for any process of dialogue to stand a realistic chance of succeeding, some form of international facilitation is clearly essential.",
+        "target": "Les deux camps ont \u00e0 pr\u00e9sent atteint un tel degr\u00e9 de m\u00e9fiance qu'une forme de m\u00e9diation internationale est devenue indispensable pour donner \u00e0 toute tentative de dialogue une chance r\u00e9aliste de succ\u00e8s.",
+        "generated": "Il est maintenant la case que le niveau de la d\u00e9mocratie est un instrument tr\u00e8s important pour le processus de paix, \u00e0 savoir la volont\u00e9 politique d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international",
+        "normalized_target": "les deux camps ont \u00e0 pr\u00e9sent atteint un tel degr\u00e9 de m\u00e9fiance qu'une forme de m\u00e9diation internationale est devenue indispensable pour donner \u00e0 toute tentative de dialogue une chance r\u00e9aliste de succ\u00e8s.",
+        "normalized_generated": "il est maintenant la case que le niveau de la d\u00e9mocratie est un instrument tr\u00e8s important pour le processus de paix, \u00e0 savoir la volont\u00e9 politique d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international d'un accord international",
+        "is_match": false,
+        "word_accuracy": 0.17857142857142858
+      },
+      {
+        "source": "The European Union has therefore appointed Felipe Gonz\u00e1lez as its representative to the FRY to work in tandem with his mandate from the chairman-in-office of the OSCE as his personal representative.",
+        "target": "C'est pourquoi l'Union europ\u00e9enne a d\u00e9sign\u00e9 Felipe Gonz\u00e1lez comme son repr\u00e9sentant aupr\u00e8s de la R\u00e9publique f\u00e9d\u00e9rale de Yougoslavie. Il cumule cette fonction avec son mandat de repr\u00e9sentant personnel du pr\u00e9sident en exercice de l'OSCE.",
+        "generated": "<|> L'Union europ\u00e9enne a donc appointed consid\u00e9rablement de son sein de la pr\u00e9sidence portugaise, le pr\u00e9sident du Conseil de l'Union a exprim\u00e9 un accord d'association avec son mandat de la pr\u00e9sidence portugaise, le pr\u00e9sident du Conseil de l'Europe a exprim\u00e9 un accord d'association avec son mandat de la pr\u00e9sidence portugaise, le pr\u00e9sident du Conseil de l'Europe a exprim\u00e9",
+        "normalized_target": "c'est pourquoi l'union europ\u00e9enne a d\u00e9sign\u00e9 felipe gonz\u00e1lez comme son repr\u00e9sentant aupr\u00e8s de la r\u00e9publique f\u00e9d\u00e9rale de yougoslavie. il cumule cette fonction avec son mandat de repr\u00e9sentant personnel du pr\u00e9sident en exercice de l'osce.",
+        "normalized_generated": "<|> l'union europ\u00e9enne a donc appointed consid\u00e9rablement de son sein de la pr\u00e9sidence portugaise, le pr\u00e9sident du conseil de l'union a exprim\u00e9 un accord d'association avec son mandat de la pr\u00e9sidence portugaise, le pr\u00e9sident du conseil de l'europe a exprim\u00e9 un accord d'association avec son mandat de la pr\u00e9sidence portugaise, le pr\u00e9sident du conseil de l'europe a exprim\u00e9",
+        "is_match": false,
+        "word_accuracy": 0.3448275862068966
+      },
+      {
+        "source": "Belgrade's response so far to Mr Gonz\u00e1lez' mission has been disappointing. It continues to claim that Kosovo is an internal affair.",
+        "target": "Belgrade a jusqu'\u00e0 pr\u00e9sent r\u00e9agi de mani\u00e8re d\u00e9cevante \u00e0 la mission de Felipe Gonz\u00e1lez en continuant de pr\u00e9tendre que le Kosovo est une affaire int\u00e9rieure.",
+        "generated": "Charte l'agir \u00e0 la mission a \u00e9t\u00e9 exprim\u00e9e par la mission de M.",
+        "normalized_target": "belgrade a jusqu'\u00e0 pr\u00e9sent r\u00e9agi de mani\u00e8re d\u00e9cevante \u00e0 la mission de felipe gonz\u00e1lez en continuant de pr\u00e9tendre que le kosovo est une affaire int\u00e9rieure.",
+        "normalized_generated": "charte l'agir \u00e0 la mission a \u00e9t\u00e9 exprim\u00e9e par la mission de m.",
+        "is_match": false,
+        "word_accuracy": 0.21739130434782608
+      },
+      {
+        "source": "But we reject such claims.",
+        "target": "Nous n'acceptons pas cet argument.",
+        "generated": "Mais nous rejettons.",
+        "normalized_target": "nous n'acceptons pas cet argument.",
+        "normalized_generated": "mais nous rejettons.",
+        "is_match": false,
+        "word_accuracy": 0.2
+      },
+      {
+        "source": "There are serious human rights concerns and these have no boundaries.",
+        "target": "Les inqui\u00e9tudes au sujet des droits de l'homme sont bien r\u00e9elles et en cette mati\u00e8re, il n'existe pas de fronti\u00e8res.",
+        "generated": "Il y a beaucoup de ces valeurs et ces deux parties ne sont pas abord\u00e9es.",
+        "normalized_target": "les inqui\u00e9tudes au sujet des droits de l'homme sont bien r\u00e9elles et en cette mati\u00e8re, il n'existe pas de fronti\u00e8res.",
+        "normalized_generated": "il y a beaucoup de ces valeurs et ces deux parties ne sont pas abord\u00e9es.",
+        "is_match": false,
+        "word_accuracy": 0.2631578947368421
+      },
+      {
+        "source": "The situation in Kosovo also poses serious risks to the security of neighbouring states and to the stability of the region as a whole.",
+        "target": "En outre, la situation au Kosovo pr\u00e9sente de s\u00e9rieux risques pour la s\u00e9curit\u00e9 des \u00c9tats voisins et pour la stabilit\u00e9 de la r\u00e9gion dans son ensemble.",
+        "generated": "La situation au Kosovo a \u00e9galement exprim\u00e9 par la crise de s\u00e9curit\u00e9 alimentaire, \u00e0 la stabilit\u00e9 des r\u00e9gions comme un cur.",
+        "normalized_target": "en outre, la situation au kosovo pr\u00e9sente de s\u00e9rieux risques pour la s\u00e9curit\u00e9 des \u00e9tats voisins et pour la stabilit\u00e9 de la r\u00e9gion dans son ensemble.",
+        "normalized_generated": "la situation au kosovo a \u00e9galement exprim\u00e9 par la crise de s\u00e9curit\u00e9 alimentaire, \u00e0 la stabilit\u00e9 des r\u00e9gions comme un cur.",
+        "is_match": false,
+        "word_accuracy": 0.38095238095238093
+      },
+      {
+        "source": "The governments of those states which stand to be affected most, namely Albania and Macedonia, have taken a constructive approach to Kosovo which we very much welcome.",
+        "target": "Les gouvernements des \u00c9tats qui risquent le plus d'\u00eatre touch\u00e9s, \u00e0 savoir l'Albanie et la Mac\u00e9doine, ont adopt\u00e9 une approche constructive \u00e0 l'\u00e9gard du Kosovo et nous nous en f\u00e9licitons vivement.",
+        "generated": "Les gouvernements des \u00c9tats membres qui ont attir\u00e9 les plus pauvres, \u00e0 la d\u00e9mocratie et \u00e0 la d\u00e9mocratie, ont pris une initiative extr\u00eamement constructive afin que nous ex\u00e9cuter.",
+        "normalized_target": "les gouvernements des \u00e9tats qui risquent le plus d'\u00eatre touch\u00e9s, \u00e0 savoir l'albanie et la mac\u00e9doine, ont adopt\u00e9 une approche constructive \u00e0 l'\u00e9gard du kosovo et nous nous en f\u00e9licitons vivement.",
+        "normalized_generated": "les gouvernements des \u00e9tats membres qui ont attir\u00e9 les plus pauvres, \u00e0 la d\u00e9mocratie et \u00e0 la d\u00e9mocratie, ont pris une initiative extr\u00eamement constructive afin que nous ex\u00e9cuter.",
+        "is_match": false,
+        "word_accuracy": 0.4642857142857143
+      },
+      {
+        "source": "We recognize their concerns and will continue to work with them in exploring ways of preventing the situation in Kosovo from affecting their own security.",
+        "target": "Nous reconnaissons le bien-fond\u00e9 de leurs inqui\u00e9tudes et nous continuerons de rechercher avec eux les moyens d'emp\u00eacher que la situation au Kosovo en vienne \u00e0 menacer leur propre s\u00e9curit\u00e9.",
+        "generated": "Nous attendons de faire face \u00e0 la crise de la situation dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le",
+        "normalized_target": "nous reconnaissons le bien-fond\u00e9 de leurs inqui\u00e9tudes et nous continuerons de rechercher avec eux les moyens d'emp\u00eacher que la situation au kosovo en vienne \u00e0 menacer leur propre s\u00e9curit\u00e9.",
+        "normalized_generated": "nous attendons de faire face \u00e0 la crise de la situation dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le cadre de la r\u00e9gion dans le",
+        "is_match": false,
+        "word_accuracy": 0.2222222222222222
+      },
+      {
+        "source": "We have already increased the number of European Community mission monitors on the Albanian border with Kosovo and have also placed monitors in Macedonia.",
+        "target": "Nous avons d\u00e9j\u00e0 augment\u00e9 le nombre de missions d'observation de la Communaut\u00e9 europ\u00e9enne sur la fronti\u00e8re albanaise avec le Kosovo et nous avons plac\u00e9 des observateurs en Mac\u00e9doine.",
+        "generated": "Nous disposons d\u00e9j\u00e0 beaucoup de la mission de l'Union europ\u00e9enne de s'engager sur le Kosovo et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et le Kosovo, et",
+        "normalized_target": "nous avons d\u00e9j\u00e0 augment\u00e9 le nombre de missions d'observation de la communaut\u00e9 europ\u00e9enne sur la fronti\u00e8re albanaise avec le kosovo et nous avons plac\u00e9 des observateurs en mac\u00e9doine.",
+        "normalized_generated": "nous disposons d\u00e9j\u00e0 beaucoup de la mission de l'union europ\u00e9enne de s'engager sur le kosovo et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et le kosovo, et",
+        "is_match": false,
+        "word_accuracy": 0.391304347826087
+      },
+      {
+        "source": "It is our firm desire to see that the Federal Republic of Yugoslavia takes its rightful place in the European family of nations and plays a full part in the international community.",
+        "target": "Nous souhaitons ardemment que la R\u00e9publique f\u00e9d\u00e9rale de Yougoslavie puisse prendre la place qui lui revient au sein de la famille des nations europ\u00e9ennes et puisse jouer pleinement son r\u00f4le sur la sc\u00e8ne internationale.",
+        "generated": "Il est grand temps que la volont\u00e9 politique de Milosevic se pr\u00e9occupe de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population.",
+        "normalized_target": "nous souhaitons ardemment que la r\u00e9publique f\u00e9d\u00e9rale de yougoslavie puisse prendre la place qui lui revient au sein de la famille des nations europ\u00e9ennes et puisse jouer pleinement son r\u00f4le sur la sc\u00e8ne internationale.",
+        "normalized_generated": "il est grand temps que la volont\u00e9 politique de milosevic se pr\u00e9occupe de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population de la population.",
+        "is_match": false,
+        "word_accuracy": 0.10344827586206896
+      }
+    ]
+  },
+  "sentence_similarity": {
+    "avg_similarity": -0.0380277260299772,
+    "min_similarity": -0.14300131797790527,
+    "max_similarity": 0.19631744921207428,
+    "n_pairs": 100,
+    "method": "mean_pooling"
+  }
+}
