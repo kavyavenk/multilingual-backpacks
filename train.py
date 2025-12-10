@@ -357,9 +357,8 @@ def get_top_activating_words(model, batch, tokenizer, device='cuda', top_k=10):
     model.eval()
     B, T = batch.size()
     
-    # Get sense weights for this batch
-    sense_embs = model.sense_embeddings(batch)  # (B, T, n_senses * n_embd)
-    sense_embs = sense_embs.view(B, T, model.n_senses, model.config.n_embd)
+    # Get sense vectors for this batch using the current architecture
+    sense_embs = model.get_sense_vectors(batch)  # (B, T, n_senses, n_embd)
     
     pos = torch.arange(0, T, dtype=torch.long, device=device)
     pos_emb = model.pos_embeddings(pos)  # (T, n_embd)

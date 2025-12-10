@@ -225,8 +225,14 @@ class BackpackLM(nn.Module):
     def get_sense_vectors(self, idx):
         """Extract sense vectors for given token indices"""
         B, T = idx.size()
-        sense_embs = self.sense_embeddings(idx)  # (B, T, n_senses * n_embd)
-        sense_embs = sense_embs.view(B, T, self.n_senses, self.config.n_embd)
+        
+        # Get token embeddings
+        token_embs = self.token_embedding(idx)  # (B, T, n_embd)
+        
+        # Compute sense vectors using sense_layer (same as in forward pass)
+        sense_embs = self.sense_layer(token_embs)  # (B, T, n_senses * n_embd)
+        sense_embs = sense_embs.view(B, T, self.n_senses, self.config.n_embd)  # (B, T, n_senses, n_embd)
+        
         return sense_embs
 
     def configure_optimizers(self, weight_decay, learning_rate, betas, device_type):

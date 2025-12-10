@@ -11,7 +11,10 @@ from evaluate import (
     load_model,
     evaluate_multisimlex,
     evaluate_cross_lingual_multisimlex,
-    analyze_sense_vectors
+    analyze_sense_vectors,
+    load_test_data,
+    evaluate_translation_bleu,
+    evaluate_translation_accuracy
 )
 from transformers import AutoTokenizer
 
@@ -24,6 +27,14 @@ def main():
                        help='Device to run on (cuda/cpu)')
     parser.add_argument('--skip_multisimlex', action='store_true',
                        help='Skip MultiSimLex evaluation (if dataset unavailable)')
+    parser.add_argument('--skip_translation', action='store_true',
+                       help='Skip translation evaluation (BLEU and accuracy)')
+    parser.add_argument('--translation_samples', type=int, default=500,
+                       help='Number of test samples for translation evaluation')
+    parser.add_argument('--data_dir', type=str, default='data/europarl',
+                       help='Directory containing Europarl data')
+    parser.add_argument('--language_pair', type=str, default='en-fr',
+                       help='Language pair for translation evaluation')
     args = parser.parse_args()
     
     print("\n" + "="*70)
@@ -106,7 +117,61 @@ def main():
     else:
         print("\n2. WORD SIMILARITY EVALUATION (MultiSimLex) - SKIPPED")
     
-    # 3. Summary
+    # 3. Translation Evaluation (BLEU and Accuracy)
+    if not args.skip_translation:
+        print("\n" + "="*70)
+        print("3. TRANSLATION EVALUATION (BLEU & ACCURACY)")
+        print("="*70)
+        
+        # Load test data
+        print(f"\nLoading test data from {args.data_dir}...")
+        test_pairs = load_test_data(
+            data_dir=args.data_dir,
+            language_pair=args.language_pair,
+            max_samples=args.translation_samples,
+            split='validation'  # Use validation set as test set
+        )
+        
+        if test_pairs:
+            # BLEU Score Evaluation
+            try:
+                print("\n3a. BLEU Score Evaluation...")
+                bleu_results = evaluate_translation_bleu(
+                    model, tokenizer, test_pairs, args.device,
+                    max_samples=args.translation_samples,
+                    max_new_tokens=100,
+                    temperature=1.0,
+                    top_k=None
+                )
+                if bleu_results:
+                    results['translation_bleu'] = bleu_results
+            except Exception as e:
+                print(f"  ERROR in BLEU evaluation: {e}")
+                results['translation_bleu'] = None
+            
+            # Translation Accuracy Evaluation
+            try:
+                print("\n3b. Translation Accuracy Evaluation...")
+                accuracy_results = evaluate_translation_accuracy(
+                    model, tokenizer, test_pairs, args.device,
+                    max_samples=args.translation_samples,
+                    max_new_tokens=100,
+                    temperature=1.0,
+                    top_k=None
+                )
+                if accuracy_results:
+                    results['translation_accuracy'] = accuracy_results
+            except Exception as e:
+                print(f"  ERROR in accuracy evaluation: {e}")
+                results['translation_accuracy'] = None
+        else:
+            print("  Could not load test data - skipping translation evaluation")
+            results['translation_bleu'] = None
+            results['translation_accuracy'] = None
+    else:
+        print("\n3. TRANSLATION EVALUATION (BLEU & ACCURACY) - SKIPPED")
+    
+    # 4. Summary
     print("\n" + "="*70)
     print("EVALUATION SUMMARY")
     print("="*70)
@@ -137,6 +202,21 @@ def main():
     
     print(f"\nSense vectors analyzed for {len(test_words)} words")
     print(f"  See detailed predictions in results file")
+    
+    # Translation evaluation summary
+    if results.get('translation_bleu') is not None:
+        print(f"\nTranslation Quality (BLEU):")
+        bleu = results['translation_bleu']
+        print(f"  Average BLEU: {bleu['avg_bleu']:.4f}")
+        if bleu.get('sacrebleu'):
+            print(f"  SacreBLEU: {bleu['sacrebleu']['score']:.4f}")
+    
+    if results.get('translation_accuracy') is not None:
+        print(f"\nTranslation Accuracy:")
+        acc = results['translation_accuracy']
+        print(f"  Exact match rate: {acc['exact_match_rate']:.4f} ({acc['exact_matches']}/{acc['n_pairs']})")
+        print(f"  Word-level accuracy: {acc['avg_word_accuracy']:.4f}")
+        print(f"  Character-level accuracy: {acc['avg_char_accuracy']:.4f}")
     
     # Save results
     output_file = os.path.join(args.out_dir, 'evaluation_results.json')
