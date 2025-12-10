@@ -29,8 +29,8 @@ def load_model(out_dir, device):
         error_msg += f"{'='*60}\n"
         raise FileNotFoundError(error_msg)
     
-    checkpoint = torch.load(ckpt_path, map_location=device)
-    config = checkpoint['config']
+    with torch.serialization.safe_globals([ModelConfig]):
+        checkpoint = torch.load(ckpt_path, map_location=device)
     
     # Determine model type based on config or checkpoint
     is_transformer = hasattr(config, 'n_senses') and config.n_senses == 1
