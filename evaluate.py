@@ -645,7 +645,7 @@ def load_test_data(data_dir='data/europarl', language_pair='en-fr', max_samples=
 
 
 def generate_translation(model, tokenizer, source_text, device, 
-                         max_new_tokens=100, temperature=1.0, top_k=None):
+                         max_new_tokens=100, temperature=0.7, top_k=50, greedy=False):
     """
     Generate translation from source text using the model.
     Uses the training format: "English text <|lang_sep|> French text"
@@ -657,12 +657,18 @@ def generate_translation(model, tokenizer, source_text, device,
         source_text: Source sentence to translate
         device: Device to run on
         max_new_tokens: Maximum tokens to generate
-        temperature: Sampling temperature
-        top_k: Top-k sampling
+        temperature: Sampling temperature (lower = more deterministic)
+        top_k: Top-k sampling (None = no filtering)
+        greedy: If True, use greedy decoding (temperature=0, top_k=1)
     
     Returns:
         Generated translation text
     """
+    # Use greedy decoding for better quality if requested
+    if greedy:
+        temperature = 0.0
+        top_k = 1
+    
     # Create prompt in the format the model was trained on
     # The model was trained on interleaved pairs: "English text <|lang_sep|> French text"
     # So we use: "English text <|lang_sep|>" to prompt for French translation
@@ -675,13 +681,13 @@ def generate_translation(model, tokenizer, source_text, device,
     prompt_ids = tokenizer.encode(prompt, add_special_tokens=True)
     prompt_ids = torch.tensor([prompt_ids], dtype=torch.long, device=device)
     
-    # Generate translation (model should continue after target_tag)
+    # Generate translation (model should continue after separator)
     with torch.no_grad():
         generated_ids = model.generate(
             prompt_ids,
             max_new_tokens=max_new_tokens,
-            temperature=temperature,
-            top_k=top_k
+            temperature=temperature if temperature > 0 else 1.0,  # Avoid division by zero
+            top_k=top_k if not greedy else 1
         )
     
     # Decode generated text
@@ -698,6 +704,21 @@ def generate_translation(model, tokenizer, source_text, device,
         next_sep = generated_text.find(lang_sep)
         if next_sep != -1:
             generated_text = generated_text[:next_sep].strip()
+        
+        # Stop at end of sentence markers (but allow punctuation at the end)
+        # Look for sentence endings, but be smart about it
+        sentence_endings = ['.', '!', '?']
+        for i, char in enumerate(generated_text):
+            if char in sentence_endings:
+                # Check if this looks like a real sentence end (not mid-word)
+                if i == len(generated_text) - 1 or generated_text[i+1] in [' ', '\n', '\t']:
+                    generated_text = generated_text[:i+1].strip()
+                    break
+        
+        # Also stop at newlines
+        newline_pos = generated_text.find('\n')
+        if newline_pos != -1:
+            generated_text = generated_text[:newline_pos].strip()
     else:
         # Fallback: if separator not found, try to extract after source text
         if generated_full.startswith(prompt):
@@ -716,49 +737,48 @@ def generate_translation(model, tokenizer, source_text, device,
             else:
                 generated_text = generated_full.strip()
     
+    # Clean up: remove any remaining separators or special tokens
+    generated_text = generated_text.replace(lang_sep, '').strip()
+    
+    # Remove any trailing incomplete words or fragments
+    # If text ends abruptly, try to find last complete sentence
+    if len(generated_text) > 0 and generated_text[-1] not in ['.', '!', '?', ',', ';', ':']:
+        # Try to find last complete word
+        last_space = generated_text.rfind(' ')
+        if last_space > len(generated_text) * 0.5:  # Only if we have substantial text
+            generated_text = generated_text[:last_space].strip()
+    
     return generated_text
 
 
 def calculate_bleu_score(reference, candidate):
     """
     Calculate BLEU score between reference and candidate translations.
+    Uses sacrebleu for more reliable calculation.
     
     Args:
         reference: Reference translation (string)
         candidate: Candidate translation (string)
     
     Returns:
-        BLEU score (float)
+        BLEU score (float, 0-1 scale)
     """
     try:
-        from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-        import nltk
-        # Download required NLTK data if not present
-        try:
-            nltk.data.find('tokenizers/punkt')
-        except LookupError:
-            nltk.download('punkt', quiet=True)
+        import sacrebleu
+        # Use sacrebleu for single sentence (more reliable)
+        bleu = sacrebleu.sentence_bleu(candidate, [reference])
+        return bleu.score / 100.0  # Convert to 0-1 scale
     except ImportError:
-        print("Error: nltk not installed. Install with: pip install nltk")
-        return None
-    
-    # Tokenize sentences
-    reference_tokens = reference.lower().split()
-    candidate_tokens = candidate.lower().split()
-    
-    # Use smoothing function to handle cases where n-grams don't match
-    smoothing = SmoothingFunction().method1
-    
-    # Calculate BLEU score
-    try:
-        bleu_score = sentence_bleu(
-            [reference_tokens],
-            candidate_tokens,
-            smoothing_function=smoothing
-        )
-        return bleu_score
-    except:
-        return 0.0
+        # Fallback to simple token overlap if sacrebleu not available
+        try:
+            ref_tokens = set(reference.lower().split())
+            cand_tokens = set(candidate.lower().split())
+            if len(ref_tokens) == 0:
+                return 0.0
+            overlap = len(ref_tokens & cand_tokens) / len(ref_tokens)
+            return overlap  # Simple word overlap as fallback
+        except:
+            return 0.0
 
 
 def calculate_sacrebleu(references, candidates):
@@ -793,7 +813,7 @@ def calculate_sacrebleu(references, candidates):
 
 
 def evaluate_translation_bleu(model, tokenizer, test_pairs, device, max_samples=None, 
-                              max_new_tokens=100, temperature=1.0, top_k=None):
+                              max_new_tokens=100, temperature=0.7, top_k=50, greedy=False):
     """
     Evaluate translation quality using BLEU scores.
     
@@ -835,7 +855,8 @@ def evaluate_translation_bleu(model, tokenizer, test_pairs, device, max_samples=
                 model, tokenizer, source_text, device,
                 max_new_tokens=max_new_tokens,
                 temperature=temperature,
-                top_k=top_k
+                top_k=top_k,
+                greedy=greedy
             )
             
             references.append(target_text)
@@ -888,7 +909,7 @@ def evaluate_translation_bleu(model, tokenizer, test_pairs, device, max_samples=
 
 
 def evaluate_translation_accuracy(model, tokenizer, test_pairs, device, max_samples=None,
-                                  max_new_tokens=100, temperature=1.0, top_k=None):
+                                  max_new_tokens=100, temperature=0.7, top_k=50, greedy=False):
     """
     Evaluate translation accuracy using exact match and word-level metrics.
     
@@ -930,7 +951,8 @@ def evaluate_translation_accuracy(model, tokenizer, test_pairs, device, max_samp
                 model, tokenizer, source_text, device,
                 max_new_tokens=max_new_tokens,
                 temperature=temperature,
-                top_k=top_k
+                top_k=top_k,
+                greedy=greedy
             )
             
             # Exact match

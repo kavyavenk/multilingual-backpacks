@@ -140,8 +140,9 @@ def main():
                     model, tokenizer, test_pairs, args.device,
                     max_samples=args.translation_samples,
                     max_new_tokens=100,
-                    temperature=1.0,
-                    top_k=None
+                    temperature=0.3,  # Lower temperature for better quality
+                    top_k=10,  # Top-k sampling for better quality
+                    greedy=True  # Use greedy decoding for best quality
                 )
                 if bleu_results:
                     results['translation_bleu'] = bleu_results
@@ -156,8 +157,9 @@ def main():
                     model, tokenizer, test_pairs, args.device,
                     max_samples=args.translation_samples,
                     max_new_tokens=100,
-                    temperature=1.0,
-                    top_k=None
+                    temperature=0.3,  # Lower temperature for better quality
+                    top_k=10,  # Top-k sampling for better quality
+                    greedy=True  # Use greedy decoding for best quality
                 )
                 if accuracy_results:
                     results['translation_accuracy'] = accuracy_results
