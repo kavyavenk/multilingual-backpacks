@@ -1,8 +1,43 @@
 {
   "sense_analysis": "10 words analyzed",
-  "multisimlex_en": null,
-  "multisimlex_fr": null,
-  "multisimlex_en_fr": null,
-  "translation_bleu": null,
-  "translation_accuracy": null
+  "translation_bleu": {
+    "n_pairs": 500,
+    "avg_bleu": 0.0,
+    "median_bleu": 0.0,
+    "std_bleu": 0.0,
+    "min_bleu": 0.0,
+    "max_bleu": 0.0,
+    "sacrebleu": null,
+    "individual_scores": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "translation_accuracy": {
+    "n_pairs": 500,
+    "exact_match_rate": 0.0,
+    "exact_matches": 0,
+    "avg_word_accuracy": 0.10852209783445631,
+    "avg_char_accuracy": 0.4280028357731134,
+    "word_accuracies": [
+      0.07142857142857142,
+      0.27586206896551724,
+      0.13043478260869565,
+      0.0,
+      0.15789473684210525,
+      0.23809523809523808,
+      0.07142857142857142,
+      0.25925925925925924,
+      0.0,
+      0.13793103448275862
+    ]
+  }
 }

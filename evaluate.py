@@ -644,9 +644,12 @@ def load_test_data(data_dir='data/europarl', language_pair='en-fr', max_samples=
     return parallel_pairs
 
 
-def generate_translation(model, tokenizer, source_text, device, max_new_tokens=100, temperature=1.0, top_k=None):
+def generate_translation(model, tokenizer, source_text, device, 
+                         max_new_tokens=100, temperature=1.0, top_k=None):
     """
     Generate translation from source text using the model.
+    Uses the training format: "English text <|lang_sep|> French text"
+    The model was trained on interleaved parallel sentences with this separator.
     
     Args:
         model: Trained model
@@ -660,25 +663,58 @@ def generate_translation(model, tokenizer, source_text, device, max_new_tokens=1
     Returns:
         Generated translation text
     """
-    # Tokenize source text
-    source_ids = tokenizer.encode(source_text, add_special_tokens=True)
-    source_ids = torch.tensor([source_ids], dtype=torch.long, device=device)
+    # Create prompt in the format the model was trained on
+    # The model was trained on interleaved pairs: "English text <|lang_sep|> French text"
+    # So we use: "English text <|lang_sep|>" to prompt for French translation
+    lang_sep = "<|lang_sep|>"
     
-    # Generate translation
+    # Create prompt: source_text + language separator (model should continue with target language)
+    prompt = f"{source_text} {lang_sep}"
+    
+    # Tokenize prompt
+    prompt_ids = tokenizer.encode(prompt, add_special_tokens=True)
+    prompt_ids = torch.tensor([prompt_ids], dtype=torch.long, device=device)
+    
+    # Generate translation (model should continue after target_tag)
     with torch.no_grad():
         generated_ids = model.generate(
-            source_ids,
+            prompt_ids,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             top_k=top_k
         )
     
     # Decode generated text
-    generated_text = tokenizer.decode(generated_ids[0].tolist(), skip_special_tokens=True)
+    generated_full = tokenizer.decode(generated_ids[0].tolist(), skip_special_tokens=True)
     
-    # Remove source text from generated text (if it was included)
-    if generated_text.startswith(source_text):
-        generated_text = generated_text[len(source_text):].strip()
+    # Extract translation part (everything after the language separator)
+    lang_sep_pos = generated_full.find(lang_sep)
+    if lang_sep_pos != -1:
+        # Extract text after language separator
+        translation_start = lang_sep_pos + len(lang_sep)
+        generated_text = generated_full[translation_start:].strip()
+        
+        # Stop at next language separator if present (to avoid generating multiple sentences)
+        next_sep = generated_text.find(lang_sep)
+        if next_sep != -1:
+            generated_text = generated_text[:next_sep].strip()
+    else:
+        # Fallback: if separator not found, try to extract after source text
+        if generated_full.startswith(prompt):
+            generated_text = generated_full[len(prompt):].strip()
+        else:
+            # Last resort: return everything after source text
+            source_pos = generated_full.find(source_text)
+            if source_pos != -1:
+                # Find the separator after source text
+                after_source = generated_full[source_pos + len(source_text):]
+                sep_pos = after_source.find(lang_sep)
+                if sep_pos != -1:
+                    generated_text = after_source[sep_pos + len(lang_sep):].strip()
+                else:
+                    generated_text = after_source.strip()
+            else:
+                generated_text = generated_full.strip()
     
     return generated_text
 

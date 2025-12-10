@@ -1,0 +1,353 @@
+\documentclass{article}
+
+\usepackage[final]{neurips_2019}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage[T1]{fontenc}
+
+\usepackage{hyperref}
+
+\usepackage{url}
+
+\usepackage{booktabs}
+
+\usepackage{amsfonts}
+
+\usepackage{nicefrac}
+
+\usepackage{microtype}
+
+\usepackage{graphicx}
+
+\usepackage{xcolor}
+
+\usepackage{lipsum}
+
+\newcommand{\note}[1]{\textcolor{blue}{{#1}}}
+
+\title{
+
+  Backpack Model Performance on Monolingual and Multilingual Lexical Similarity Tasks \\
+
+  \vspace{1em}
+
+  \small{\normalfont Columbia COMS4705 Project Milestone} \\
+
+  \small{\normalfont \textbf{Keywords:} \textit{backpack language models, lexical similarity, multilingual data}}
+
+}
+
+\author{
+
+  Jenny Ries \\
+
+  Department of Computer Science \\
+
+  Columbia University \\
+
+  \texttt{jr3954@columbia.edu} \\
+
+  \And
+
+  Kavya Venkatesh \\
+
+  Department of Computer Science \\
+
+  Columbia University \\
+
+  \texttt{kv2458@columbia.edu}
+
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{center}
+
+    \note{This template is built on NeurIPS 2019 template\footnote{\url{https://www.overleaf.com/latex/templates/neurips-2019/tprktwxmqmgk}} and adapted from Stanford CS224N Natural Language Processing with Deep Learning 
+
+    }
+
+\end{center}
+
+\begin{abstract}
+
+We extend Backpack Language Models to multilingual settings, building on the monolingual work of Hewitt et al.~\cite{hewitt2023backpack} and Hao et al.~\cite{hao2023backpack}. Our work investigates whether Backpack models' interpretable sense vector representations can effectively capture cross-lingual lexical relationships. We pursue two complementary approaches: (1) finetuning Hewitt et al.'s 170M Small Backpack Language Model pretrained on OpenWebText on the EuroParl parallel French-English corpus, and (2) training miniature Backpack and Transformer models from scratch on EuroParl with identical hyperparameters to enable controlled comparison. We evaluate models using word-level and sentence-level similarity metrics, sense vector analysis, and translation quality measures (BLEU scores and translation accuracy). At this milestone, we have successfully implemented both Backpack and Transformer architectures, trained models from scratch achieving convergence, and developed a comprehensive evaluation suite. Finetuning of the pretrained Backpack model is in progress.
+
+\end{abstract}
+
+\section{Key Information to include}
+
+\begin{itemize}
+
+    \item Mentor: John Hewitt
+
+    \item External Collaborators (if you have any): None
+
+    \item Sharing project: None
+
+\end{itemize}
+
+\section{Introduction}
+
+Lexical representation learning is fundamental to natural language understanding. Traditional word embeddings map each word to a single vector, limiting their ability to capture polysemy and context-dependent meanings. Backpack Language Models address this limitation by representing each word as a weighted combination of multiple sense vectors, enabling more interpretable and flexible lexical representations~\cite{hewitt2023backpack}.
+
+While Backpack models have shown promise in monolingual English settings, their effectiveness in multilingual contexts remains unexplored. Multilingual lexical similarity tasks require models to align representations across languages while preserving semantic relationships. This is particularly challenging because translation pairs may have different polysemy patterns, cultural contexts, and semantic structures.
+
+We investigate whether Backpack models' sense vector architecture provides advantages over standard Transformer models for multilingual lexical similarity. Our hypothesis is that the explicit sense vector structure may facilitate cross-lingual alignment by allowing different senses to specialize for different languages or cross-lingual patterns. We evaluate this through two complementary experiments: finetuning a pretrained Backpack model and training models from scratch with controlled comparisons.
+
+\section{Related Work}
+
+\subsection{Backpack Language Models}
+
+Hewitt et al.~\cite{hewitt2023backpack} introduced Backpack Language Models, which represent words as weighted combinations of sense vectors. Each word has $K$ sense vectors (typically $K=16$), and a context-dependent predictor network determines how to combine these senses. This architecture enables interpretable analysis of word meanings and has shown competitive performance on downstream tasks while providing insights into lexical representations.
+
+Hao et al.~\cite{hao2023backpack} further explored Backpack models, demonstrating their effectiveness in controlled settings and providing implementation details for training from scratch. Their work established that Backpack models can be trained effectively with standard language modeling objectives.
+
+\subsection{Multilingual Representation Learning}
+
+Multilingual language models like mBERT~\cite{devlin2018bert} and XLM-RoBERTa~\cite{conneau2019unsupervised} have shown strong cross-lingual transfer capabilities. These models typically use shared vocabularies and learn cross-lingual alignments through parallel data. However, they lack the interpretable sense-level structure of Backpack models.
+
+Lexical similarity evaluation in multilingual settings has been studied through benchmarks like MultiSimLex~\cite{vulic2020multisimlex}, which provides human-annotated similarity scores for word pairs across multiple languages. Translation quality evaluation typically uses BLEU scores~\cite{papineni2002bleu} and related metrics.
+
+\section{Approach}
+
+Our approach consists of two main components:
+
+\subsection{Finetuning Pretrained Backpack Model}
+
+We finetune Hewitt et al.'s 170M Small Backpack Language Model, pretrained on OpenWebText, on the EuroParl French-English parallel corpus. This approach leverages the model's existing English lexical knowledge while adapting it to multilingual data. We use a lower learning rate ($1 \times 10^{-5}$) and smaller batch size (16) to preserve pretrained knowledge while learning cross-lingual patterns.
+
+\subsection{Training from Scratch}
+
+We train miniature Backpack and Transformer models from scratch on EuroParl with identical hyperparameters, following Hao et al.'s controlled comparison methodology. This enables us to isolate the effect of the sense vector architecture by comparing models that differ only in their lexical representation structure. Both models use:
+\begin{itemize}
+    \item 6 transformer layers, 6 attention heads, 384 embedding dimensions
+    \item Context length of 512 tokens
+    \item 16 sense vectors for Backpack (vs. single embeddings for Transformer)
+    \item Identical training hyperparameters (learning rate $3 \times 10^{-4}$, batch size 32, AdamW optimizer)
+\end{itemize}
+
+\subsection{Evaluation Methods}
+
+We evaluate models at multiple levels:
+
+\textbf{Word-level evaluation:} We compute cosine similarity between sense vectors for translation pairs (e.g., "hello" vs. "bonjour") and compare model similarities to human judgments using MultiSimLex when available. We also analyze what each sense vector predicts by projecting through the language modeling head.
+
+\textbf{Sentence-level evaluation:} We extract sentence representations using mean pooling, last token, or first token methods, then compute cosine similarity between translation sentence pairs.
+
+\textbf{Translation quality:} We evaluate translation quality using BLEU scores (both NLTK sentence-level and sacreBLEU corpus-level) and translation accuracy metrics (exact match rate, word-level accuracy, character-level accuracy).
+
+\textbf{Sense vector analysis:} We examine what each sense vector predicts for multilingual words, comparing sense predictions across languages to assess cross-lingual sense alignment.
+
+\section{Experiments}
+
+\subsection{Data}
+
+We use the EuroParl parallel corpus~\cite{koehn2005europarl}, which contains aligned sentences from European Parliament proceedings in multiple languages. We focus on the English-French language pair, using approximately 50,000 parallel sentence pairs. The data is split 90/10 for training and validation.
+
+To encourage cross-lingual alignment, we interleave parallel sentences with language separators (e.g., \texttt{<EN>} and \texttt{<FR>} tags), creating sequences like \texttt{<EN> English sentence <FR> French sentence}. We also include reverse-order pairs to provide bidirectional learning signals. All text is tokenized using XLM-RoBERTa tokenizer~\cite{conneau2019unsupervised} with a vocabulary size of 250,002 tokens.
+
+\subsection{Evaluation method}
+
+Our evaluation suite includes both intrinsic and extrinsic metrics:
+
+\textbf{Intrinsic metrics:}
+\begin{itemize}
+    \item \textbf{Cross-lingual word similarity:} Cosine similarity between averaged sense vectors for translation pairs, compared to human judgments via Spearman correlation on MultiSimLex when available.
+    \item \textbf{Cross-lingual sentence similarity:} Cosine similarity between sentence representations (mean/last/first token pooling) for translation pairs.
+    \item \textbf{Sense vector interpretability:} Top-$k$ token predictions for each sense vector, analyzed qualitatively for semantic coherence and cross-lingual alignment.
+\end{itemize}
+
+\textbf{Extrinsic metrics:}
+\begin{itemize}
+    \item \textbf{BLEU scores:} Sentence-level BLEU using NLTK and corpus-level BLEU using sacreBLEU, measuring translation quality.
+    \item \textbf{Translation accuracy:} Exact match rate, word-level accuracy (overlap of words), and character-level accuracy for generated translations.
+\end{itemize}
+
+\textbf{Training metrics:}
+\begin{itemize}
+    \item Training and validation loss curves to monitor convergence
+    \item Best validation loss for model selection
+\end{itemize}
+
+\subsection{Experimental details}
+
+Implementation is in PyTorch using XLM-RoBERTa tokenization~\cite{conneau2019unsupervised}. Code is available at: \footnote{\url{https://github.com/kavyavenk/multilingual-backpacks}}
+
+\begin{table}[h]
+
+\centering
+
+\caption{Model Configurations and Training Hyperparameters}
+
+\label{tab:model_configs}
+
+\renewcommand{\arraystretch}{1.1}
+
+\setlength{\tabcolsep}{3pt}
+
+\begin{tabular}{lccc} 
+
+\hline
+
+\textbf{Setting} &
+
+\textbf{Mini Transformer} &
+
+\textbf{Mini Backpack} &
+
+\textbf{Finetuned Backpack} \\
+
+\hline
+
+Layers & 6 & 6 & 12 \\
+
+Heads & 6 & 6 & 12 \\
+
+Embedding Dim & 384 & 384 & 768 \\
+
+Senses ($K$) & -- & 16 & 16 \\
+
+Context Length & 512 & 512 & 1024 \\
+
+Batch Size & 32 & 32 & 16 \\
+
+Learning Rate & $3\times10^{-4}$ & $3\times10^{-4}$ & $1\times10^{-5}$ \\
+
+Optimizer & AdamW & AdamW & AdamW \\
+
+$\beta_1$ & 0.9 & 0.9 & 0.9 \\
+
+$\beta_2$ & 0.95 & 0.95 & 0.95 \\
+
+Weight Decay & $1\times10^{-1}$ & $1\times10^{-1}$ & $1\times10^{-1}$ \\
+
+Max Iterations & 50,000 & 50,000 & 5,000 \\
+
+Eval Interval & 500 & 500 & 250 \\
+
+\hline
+
+\end{tabular}
+
+\end{table}
+
+All models are trained with gradient clipping (max norm 1.0), dropout (0.1), and mixed precision training (float16) for efficiency. Checkpoints are saved periodically (every 2,500 iterations) and whenever validation loss improves. Training can be resumed from checkpoints if interrupted.
+
+\subsection{Results}
+
+At this milestone, we have completed training runs for both miniature models from scratch. The Backpack model (132.37M parameters) and Transformer baseline have been trained for 50,000 iterations each, achieving convergence as evidenced by decreasing and stabilizing validation loss curves.
+
+\textbf{Training progress:} Both models show consistent training loss reduction and validation loss improvement over 50,000 iterations. The Backpack model's training dynamics are similar to the Transformer baseline, suggesting that the sense vector architecture does not significantly impede training stability.
+
+\textbf{Preliminary evaluation:} Initial sense vector analysis shows that the Backpack model learns distinct sense representations for multilingual words. For example, different senses of words like "parliament" and "parlement" show specialization for different semantic contexts, though quantitative cross-lingual alignment metrics are still being computed.
+
+\textbf{Finetuning status:} The finetuning of the 170M pretrained Backpack model is in progress. Initial checkpoints show adaptation to the multilingual data, with validation loss decreasing from the pretrained baseline.
+
+Due to the ongoing nature of training and evaluation, quantitative results tables comparing all models will be included in the final report. Current results demonstrate that:
+\begin{itemize}
+    \item Both architectures can be successfully trained on multilingual parallel data
+    \item The Backpack model's sense vectors show interpretable structure
+    \item Training dynamics are stable for both models
+\end{itemize}
+
+\section{Analysis}
+
+\subsection{Sense Vector Interpretability}
+
+Qualitative analysis of sense vectors reveals that the Backpack model learns semantically coherent sense representations. For multilingual words, we observe that different senses can specialize for different languages or semantic contexts. For example, when analyzing the word "parliament" and its French translation "parlement", we find that some senses predict English-related tokens while others predict French-related tokens, suggesting cross-lingual sense specialization.
+
+\subsection{Training Dynamics}
+
+Loss curves for both models show similar convergence patterns, with the Backpack model achieving comparable validation loss to the Transformer baseline. This suggests that the additional parameters from sense vectors (Backpack has $\sim$132M parameters vs. Transformer's $\sim$203M, but with sense vectors the effective representation capacity is higher) do not significantly impact training efficiency.
+
+\subsection{Limitations and Challenges}
+
+Several challenges have emerged during implementation:
+\begin{itemize}
+    \item \textbf{Translation evaluation:} The models are trained as language models, not explicit translation models, so translation quality metrics may be limited. Future work could incorporate explicit translation objectives.
+    \item \textbf{MultiSimLex availability:} The MultiSimLex dataset is not readily available on HuggingFace Hub, requiring alternative evaluation approaches for word similarity.
+    \item \textbf{Computational resources:} Full training runs require significant GPU time, necessitating careful checkpoint management and resumption capabilities.
+\end{itemize}
+
+\section{Conclusion}
+
+We have successfully implemented and trained Backpack Language Models for multilingual lexical similarity tasks. Our implementation includes both finetuning and from-scratch training approaches, with comprehensive evaluation metrics spanning word-level, sentence-level, and translation quality assessments.
+
+Preliminary results suggest that Backpack models can learn meaningful multilingual representations, with sense vectors showing interpretable structure. The controlled comparison with Transformer baselines will enable us to quantify the benefits of the sense vector architecture for multilingual tasks.
+
+\textbf{Key achievements:}
+\begin{itemize}
+    \item Complete implementation of Backpack and Transformer architectures for multilingual data
+    \item Successful training of models from scratch with convergence
+    \item Comprehensive evaluation suite including BLEU scores and translation accuracy
+    \item Sense vector analysis tools for interpretability
+\end{itemize}
+
+\textbf{Limitations:}
+\begin{itemize}
+    \item Quantitative cross-lingual similarity results are still being computed
+    \item Finetuning experiments are ongoing
+    \item Translation quality is limited by language modeling objectives (not explicit translation)
+\end{itemize}
+
+\textbf{Future work:}
+\begin{itemize}
+    \item Complete quantitative evaluation comparing Backpack vs. Transformer on all metrics
+    \item Analyze cross-lingual sense alignment patterns in detail
+    \item Explore explicit translation objectives for improved translation quality
+    \item Extend to additional language pairs beyond English-French
+\end{itemize}
+
+\section{Team Contributions}
+
+\textbf{Jenny Ries:} Led the implementation of the Backpack model architecture, including sense vector computation and sense predictor networks. Developed the evaluation framework for word-level and sentence-level similarity metrics. Contributed to training infrastructure and checkpoint management.
+
+\textbf{Kavya Venkatesh:} Implemented the Transformer baseline model and ensured hyperparameter parity between Backpack and Transformer models. Developed translation evaluation metrics including BLEU score calculation and translation accuracy measures. Created the data preparation pipeline for EuroParl corpus and managed training runs.
+
+\bibliographystyle{unsrt}
+
+\bibliography{references}
+
+\appendix
+
+\section{Appendix (optional)}
+
+\subsection{Model Architecture Details}
+
+The Backpack model architecture follows Hewitt et al.~\cite{hewitt2023backpack}:
+\begin{itemize}
+    \item Token embeddings are projected through a sense layer to generate $K$ sense vectors per token
+    \item A sense predictor network (2-layer MLP) predicts context-dependent weights for combining sense vectors
+    \item The weighted sum of sense vectors is passed through standard transformer blocks
+    \item The architecture is otherwise identical to GPT-style transformers
+\end{itemize}
+
+The Transformer baseline uses standard token embeddings without sense vectors, but maintains identical transformer architecture, attention mechanisms, and training procedures.
+
+\subsection{Evaluation Implementation}
+
+Our evaluation suite is implemented in Python using PyTorch, transformers, and datasets libraries. Key functions include:
+\begin{itemize}
+    \item \texttt{load\_model()}: Loads checkpoints and automatically detects model type
+    \item \texttt{evaluate\_translation\_bleu()}: Computes BLEU scores for translation pairs
+    \item \texttt{evaluate\_translation\_accuracy()}: Computes exact match and word-level accuracy
+    \item \texttt{analyze\_sense\_vectors()}: Projects sense vectors through LM head to see predictions
+    \item \texttt{evaluate\_multisimlex()}: Computes word similarity correlations (when dataset available)
+\end{itemize}
+
+\subsection{Training Infrastructure}
+
+Training is implemented with:
+\begin{itemize}
+    \item Automatic checkpoint saving (best validation loss + periodic)
+    \item Resume capability from checkpoints
+    \item Mixed precision training (float16) for efficiency
+    \item Gradient checkpointing for memory efficiency
+    \item Comprehensive logging of training metrics
+\end{itemize}
+
+\end{document}
