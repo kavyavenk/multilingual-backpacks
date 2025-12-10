@@ -265,15 +265,23 @@ class BackpackLM(nn.Module):
             idx_cond = idx[:, -self.config.block_size:]
             # Forward pass
             logits, _ = self(idx_cond)
+            # logits shape: (B, vocab_size)
+            logits = logits.squeeze(1)  # Remove sequence dimension if present: (B, vocab_size)
+            
             # Apply temperature
             logits = logits / temperature
+            
             # Optionally crop logits to top-k
             if top_k is not None:
-                v, _ = torch.topk(logits, top_k)
-                logits[logits < v[:, [-1]]] = -float('Inf')
+                # Get top-k values for each batch item
+                v, _ = torch.topk(logits, min(top_k, logits.size(-1)), dim=-1)  # (B, top_k)
+                # Create mask: keep only top-k logits
+                logits_threshold = v[:, -1].unsqueeze(-1)  # (B, 1) - threshold value for each batch
+                logits[logits < logits_threshold] = -float('Inf')
+            
             # Sample from the distribution
             probs = F.softmax(logits, dim=-1)
-            idx_next = torch.multinomial(probs.squeeze(1), num_samples=1)
+            idx_next = torch.multinomial(probs, num_samples=1)  # (B, 1)
             # Append sampled index to the running sequence
             idx = torch.cat((idx, idx_next), dim=1)
 
@@ -384,15 +392,23 @@ class StandardTransformerLM(nn.Module):
             idx_cond = idx[:, -self.config.block_size:]
             # Forward pass
             logits, _ = self(idx_cond)
+            # logits shape: (B, vocab_size)
+            logits = logits.squeeze(1)  # Remove sequence dimension if present: (B, vocab_size)
+            
             # Apply temperature
             logits = logits / temperature
+            
             # Optionally crop logits to top-k
             if top_k is not None:
-                v, _ = torch.topk(logits, top_k)
-                logits[logits < v[:, [-1]]] = -float('Inf')
+                # Get top-k values for each batch item
+                v, _ = torch.topk(logits, min(top_k, logits.size(-1)), dim=-1)  # (B, top_k)
+                # Create mask: keep only top-k logits
+                logits_threshold = v[:, -1].unsqueeze(-1)  # (B, 1) - threshold value for each batch
+                logits[logits < logits_threshold] = -float('Inf')
+            
             # Sample from the distribution
             probs = F.softmax(logits, dim=-1)
-            idx_next = torch.multinomial(probs.squeeze(1), num_samples=1)
+            idx_next = torch.multinomial(probs, num_samples=1)  # (B, 1)
             # Append sampled index to the running sequence
             idx = torch.cat((idx, idx_next), dim=1)
         

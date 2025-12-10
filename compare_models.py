@@ -106,8 +106,9 @@ def compare_models(backpack_dir, transformer_dir, device='cpu',
                     backpack_model, tokenizer, test_pairs, device,
                     max_samples=translation_samples,
                     max_new_tokens=100,
-                    temperature=1.0,
-                    top_k=None
+                    temperature=0.3,
+                    top_k=10,
+                    greedy=True  # Use greedy for best quality
                 )
                 results['backpack']['translation_bleu'] = backpack_bleu
             except Exception as e:
@@ -119,8 +120,9 @@ def compare_models(backpack_dir, transformer_dir, device='cpu',
                     backpack_model, tokenizer, test_pairs, device,
                     max_samples=translation_samples,
                     max_new_tokens=100,
-                    temperature=1.0,
-                    top_k=None
+                    temperature=0.3,
+                    top_k=10,
+                    greedy=True  # Use greedy for best quality
                 )
                 results['backpack']['translation_accuracy'] = backpack_acc
             except Exception as e:
@@ -136,8 +138,9 @@ def compare_models(backpack_dir, transformer_dir, device='cpu',
                     transformer_model, tokenizer, test_pairs, device,
                     max_samples=translation_samples,
                     max_new_tokens=100,
-                    temperature=1.0,
-                    top_k=None
+                    temperature=0.3,
+                    top_k=10,
+                    greedy=True  # Use greedy for best quality
                 )
                 results['transformer']['translation_bleu'] = transformer_bleu
             except Exception as e:
@@ -149,8 +152,9 @@ def compare_models(backpack_dir, transformer_dir, device='cpu',
                     transformer_model, tokenizer, test_pairs, device,
                     max_samples=translation_samples,
                     max_new_tokens=100,
-                    temperature=1.0,
-                    top_k=None
+                    temperature=0.3,
+                    top_k=10,
+                    greedy=True  # Use greedy for best quality
                 )
                 results['transformer']['translation_accuracy'] = transformer_acc
             except Exception as e:
