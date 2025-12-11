@@ -202,6 +202,15 @@ def load_model(out_dir_or_file, device):
     return model, config
 
 
+def _is_huggingface_model(model):
+    """Check if model is a HuggingFace model (not our custom BackpackLM/StandardTransformerLM)"""
+    # HuggingFace models typically have 'transformer' attribute or are from transformers library
+    return (hasattr(model, 'transformer') or 
+            hasattr(model, 'config') and hasattr(model.config, 'model_type') and 
+            'gpt' in model.config.model_type.lower() or
+            type(model).__name__ in ['BackpackGPT2LMHeadModel', 'GPT2LMHeadModel'])
+
+
 def get_word_representations(model, tokenizer, words, device):
     """
     Extract word representations (sense vectors for Backpack, token embeddings for Transformer).
@@ -211,6 +220,7 @@ def get_word_representations(model, tokenizer, words, device):
     """
     representations = {}
     is_backpack = isinstance(model, BackpackLM)
+    is_hf = _is_huggingface_model(model)
     
     for word in words:
         # Tokenize word
@@ -225,6 +235,18 @@ def get_word_representations(model, tokenizer, words, device):
             sense_vectors = model.get_sense_vectors(token_id)  # (1, 1, n_senses, n_embd)
             sense_vectors = sense_vectors.squeeze(0).squeeze(0)  # (n_senses, n_embd)
             representations[word] = sense_vectors.cpu().detach().numpy()
+        elif is_hf:
+            # HuggingFace models use transformer.wte (word token embeddings)
+            with torch.no_grad():
+                if hasattr(model, 'transformer') and hasattr(model.transformer, 'wte'):
+                    token_emb = model.transformer.wte(token_id)  # (1, 1, n_embd)
+                elif hasattr(model, 'get_input_embeddings'):
+                    token_emb = model.get_input_embeddings()(token_id)  # (1, 1, n_embd)
+                else:
+                    # Fallback: try to find embeddings
+                    continue
+                token_emb = token_emb.squeeze(0).squeeze(0)  # (1, n_embd)
+                representations[word] = token_emb.cpu().detach().numpy().reshape(1, -1)
         else:
             # For StandardTransformer, get token embedding
             with torch.no_grad():
@@ -247,8 +269,10 @@ def get_sentence_representation(model, tokenizer, sentence, device, method='mean
         numpy array: Normalized sentence representation (L2 normalized)
     """
     tokens = tokenizer.encode(sentence, add_special_tokens=True)
-    if len(tokens) > model.config.block_size:
-        tokens = tokens[:model.config.block_size]
+    # Get block_size from config (handle both our models and HuggingFace)
+    block_size = getattr(model.config, 'block_size', getattr(model.config, 'n_positions', 1024))
+    if len(tokens) > block_size:
+        tokens = tokens[:block_size]
     token_ids = torch.tensor([tokens], device=device)
     
     with torch.no_grad():
@@ -256,10 +280,15 @@ def get_sentence_representation(model, tokenizer, sentence, device, method='mean
         # Get sense embeddings and combine them
         B, T = token_ids.size()
         
-        # Check if model is Backpack or StandardTransformer
+        # Check if model is Backpack, StandardTransformer, or HuggingFace
         is_backpack = isinstance(model, BackpackLM)
+        is_hf = _is_huggingface_model(model)
         
-        if is_backpack:
+        if is_hf:
+            # HuggingFace models: use forward pass to get hidden states
+            outputs = model.transformer(input_ids=token_ids, output_hidden_states=True)
+            hidden_states = outputs.hidden_states[-1]  # Last layer: (B, T, n_embd)
+        elif is_backpack:
             # Use get_sense_vectors which handles the current architecture
             sense_embs = model.get_sense_vectors(token_ids)  # (B, T, n_senses, n_embd)
             
@@ -267,10 +296,22 @@ def get_sentence_representation(model, tokenizer, sentence, device, method='mean
             pos = torch.arange(0, T, dtype=torch.long, device=device)
             pos_emb = model.pos_embeddings(pos)  # (T, n_embd)
             
-            # Predict sense weights
-            context = pos_emb.unsqueeze(0).expand(B, -1, -1)  # (B, T, n_embd)
-            sense_weights = model.sense_predictor(context)  # (B, T, n_senses)
-            sense_weights = torch.nn.functional.softmax(sense_weights, dim=-1)  # (B, T, n_senses)
+            # Use sense attention (new architecture) or sense_predictor (old architecture)
+            if hasattr(model, 'sense_attention'):
+                # New architecture: use attention-based sense weighting
+                att_weights = model.sense_attention(token_embs + pos_emb.unsqueeze(0))  # (B, n_senses, T, T)
+                # Average attention over past tokens to get sense weights per token
+                sense_weights = att_weights.mean(dim=-1).transpose(1, 2)  # (B, T, n_senses)
+                sense_weights = torch.nn.functional.softmax(sense_weights, dim=-1)
+            elif hasattr(model, 'sense_predictor'):
+                # Old architecture: use MLP-based sense predictor
+                context = pos_emb.unsqueeze(0).expand(B, -1, -1)  # (B, T, n_embd)
+                sense_weights = model.sense_predictor(context)  # (B, T, n_senses)
+                sense_weights = torch.nn.functional.softmax(sense_weights, dim=-1)  # (B, T, n_senses)
+            else:
+                # Fallback: uniform weights
+                n_senses = sense_embs.shape[2]
+                sense_weights = torch.ones(B, T, n_senses, device=device) / n_senses
             
             # Weighted sum of sense vectors
             x = torch.einsum('btsd,bts->btd', sense_embs, sense_weights)  # (B, T, n_embd)
@@ -811,7 +852,7 @@ def analyze_sense_vectors(model, tokenizer, words, device, top_k=5, verbose=True
     - Better formatted output
     
     Args:
-        model: BackpackLM model
+        model: BackpackLM model (or HuggingFace model - will skip if not supported)
         tokenizer: Tokenizer instance
         words: List of words to analyze
         device: Device to run on
@@ -824,6 +865,20 @@ def analyze_sense_vectors(model, tokenizer, words, device, top_k=5, verbose=True
     Returns:
         dict: Comprehensive results including predictions, probabilities, and metrics
     """
+    # Check if model supports sense vectors
+    is_hf = _is_huggingface_model(model)
+    if is_hf or not hasattr(model, 'get_sense_vectors'):
+        if verbose:
+            print("  Note: This model does not expose sense vectors. Skipping sense analysis.")
+        return {}
+    
+    # Check if model supports sense vectors
+    is_hf = _is_huggingface_model(model)
+    if is_hf or not hasattr(model, 'get_sense_vectors'):
+        if verbose:
+            print("  Note: This model does not expose sense vectors. Skipping sense analysis.")
+        return {}
+    
     results = {}
     
     for word in words:
@@ -2048,6 +2103,11 @@ def generate_translation(model, tokenizer, source_text, device,
     Returns:
         Generated translation text
     """
+    # HuggingFace models don't support sense retrieval - use generation instead
+    is_hf = _is_huggingface_model(model)
+    if is_hf:
+        use_sense_retrieval = False
+    
     if use_sense_retrieval:
         # Use sense vector retrieval (default - fastest and most reliable)
         return _generate_translation_sense_retrieval(model, tokenizer, source_text, device)
@@ -2500,13 +2560,21 @@ def _generate_translation_sense_retrieval(model, tokenizer, source_text, device,
     else:
         sample_indices = common_indices
     
-    # Handle both BackpackLM (token_embedding) and StandardTransformerLM (token_embeddings)
+    # Handle BackpackLM, StandardTransformerLM, and HuggingFace models
     if hasattr(model, 'token_embedding'):
         # BackpackLM uses singular
         sample_embeddings = model.token_embedding(sample_indices)  # (sample_size, n_embd)
     elif hasattr(model, 'token_embeddings'):
         # StandardTransformerLM uses plural
         sample_embeddings = model.token_embeddings(sample_indices)  # (sample_size, n_embd)
+    elif _is_huggingface_model(model):
+        # HuggingFace models use transformer.wte
+        if hasattr(model, 'transformer') and hasattr(model.transformer, 'wte'):
+            sample_embeddings = model.transformer.wte(sample_indices)  # (sample_size, n_embd)
+        elif hasattr(model, 'get_input_embeddings'):
+            sample_embeddings = model.get_input_embeddings()(sample_indices)  # (sample_size, n_embd)
+        else:
+            raise AttributeError("HuggingFace model has no accessible token embeddings")
     else:
         raise AttributeError("Model has neither token_embedding nor token_embeddings")
     
@@ -2924,8 +2992,8 @@ def evaluate_perplexity(model, tokenizer, test_data, device, max_samples=None, b
             # Process each sequence in batch
             for input_ids, target_ids in zip(batch_tokens, batch_targets):
                 try:
-                    # Truncate to model's block_size
-                    block_size = model.config.block_size
+                    # Truncate to model's block_size (handle both our models and HuggingFace)
+                    block_size = getattr(model.config, 'block_size', getattr(model.config, 'n_positions', 1024))
                     if input_ids.size(1) > block_size:
                         input_ids = input_ids[:, -block_size:]
                         target_ids = target_ids[:, -block_size:]
