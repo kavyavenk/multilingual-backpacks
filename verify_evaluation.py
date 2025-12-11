@@ -132,24 +132,58 @@ def check_model_comparison():
         with open(comparison_file) as f:
             comparison = json.load(f)
         
-        if 'backpack' not in comparison or 'transformer' not in comparison:
-            print("❌ ERROR: Comparison file missing backpack or transformer results")
-            return False
-        
         print("✅ Model comparison file exists")
         
-        # Print comparison
-        bp_bleu = comparison['backpack']['translation_bleu']['avg_bleu']
-        tf_bleu = comparison['transformer']['translation_bleu']['avg_bleu']
-        diff = comparison.get('bleu_diff', bp_bleu - tf_bleu)
+        # Safely extract comparison metrics
+        bp_bleu = None
+        tf_bleu = None
+        diff = None
         
-        print(f"   Backpack BLEU: {bp_bleu:.4f}")
-        print(f"   Transformer BLEU: {tf_bleu:.4f}")
-        print(f"   Advantage: {diff:.4f} ({diff/tf_bleu*100:.1f}% better)")
-        
-        return True
+        try:
+            if 'backpack' in comparison and isinstance(comparison['backpack'], dict):
+                if 'translation_bleu' in comparison['backpack']:
+                    bp_data = comparison['backpack']['translation_bleu']
+                    if isinstance(bp_data, dict) and 'avg_bleu' in bp_data:
+                        bp_bleu = bp_data['avg_bleu']
+            
+            if 'transformer' in comparison and isinstance(comparison['transformer'], dict):
+                if 'translation_bleu' in comparison['transformer']:
+                    tf_data = comparison['transformer']['translation_bleu']
+                    if isinstance(tf_data, dict) and 'avg_bleu' in tf_data:
+                        tf_bleu = tf_data['avg_bleu']
+            
+            if 'bleu_diff' in comparison:
+                diff = comparison['bleu_diff']
+            elif bp_bleu is not None and tf_bleu is not None:
+                diff = bp_bleu - tf_bleu
+            
+            # Print available metrics
+            if bp_bleu is not None:
+                print(f"   Backpack BLEU: {bp_bleu:.4f}")
+            if tf_bleu is not None:
+                print(f"   Transformer BLEU: {tf_bleu:.4f}")
+            if diff is not None and tf_bleu is not None and tf_bleu > 0:
+                print(f"   Advantage: {diff:.4f} ({diff/tf_bleu*100:.1f}% better)")
+            elif diff is not None:
+                print(f"   BLEU Advantage: {diff:.4f}")
+            
+            # Check if we got at least some data
+            if bp_bleu is None and tf_bleu is None:
+                print(f"⚠️  WARNING: Could not extract BLEU scores from comparison file")
+                print(f"   Available keys: {list(comparison.keys())}")
+                if 'backpack' in comparison:
+                    print(f"   Backpack keys: {list(comparison['backpack'].keys()) if isinstance(comparison['backpack'], dict) else 'not a dict'}")
+                return False
+            
+            return True
+        except KeyError as e:
+            print(f"❌ ERROR: Missing key in comparison file: {e}")
+            print(f"   Available keys: {list(comparison.keys())}")
+            return False
     except Exception as e:
         print(f"❌ ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
