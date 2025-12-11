@@ -292,7 +292,8 @@ def get_sentence_representation(model, tokenizer, sentence, device, method='mean
             # Use get_sense_vectors which handles the current architecture
             sense_embs = model.get_sense_vectors(token_ids)  # (B, T, n_senses, n_embd)
             
-            # Get position embeddings
+            # Get token embeddings and position embeddings
+            token_embs = model.token_embedding(token_ids)  # (B, T, n_embd)
             pos = torch.arange(0, T, dtype=torch.long, device=device)
             pos_emb = model.pos_embeddings(pos)  # (T, n_embd)
             
@@ -1983,8 +1984,62 @@ def load_test_data(data_dir='data/europarl', language_pair='en-fr', max_samples=
     return parallel_pairs
 
 
+def _manual_generate(model, tokenizer, input_ids, max_new_tokens, temperature, top_k, greedy, device):
+    """
+    Manual generation loop for models without generate() method.
+    """
+    model.eval()
+    generated_ids = input_ids.clone()
+    
+    for _ in range(max_new_tokens):
+        # Get block_size from config
+        block_size = getattr(model.config, 'block_size', getattr(model.config, 'n_positions', 1024))
+        
+        # Crop to block_size
+        input_ids_crop = generated_ids[:, -block_size:]
+        
+        # Forward pass
+        with torch.no_grad():
+            if _is_huggingface_model(model):
+                # HuggingFace model forward
+                outputs = model(input_ids=input_ids_crop)
+                logits = outputs.logits if hasattr(outputs, 'logits') else outputs[0]
+            else:
+                # Our custom models
+                logits, _ = model(input_ids_crop)
+            
+            # Get logits for last token
+            next_token_logits = logits[:, -1, :]  # (batch_size, vocab_size)
+        
+        # Apply temperature
+        if temperature > 0 and not greedy:
+            next_token_logits = next_token_logits / temperature
+        
+        # Apply top-k filtering
+        if top_k and top_k > 0 and not greedy:
+            indices_to_remove = next_token_logits < torch.topk(next_token_logits, top_k)[0][..., -1, None]
+            next_token_logits[indices_to_remove] = float('-inf')
+        
+        # Sample or take argmax
+        if greedy or temperature == 0:
+            next_token = torch.argmax(next_token_logits, dim=-1, keepdim=True)
+        else:
+            probs = torch.nn.functional.softmax(next_token_logits, dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1)
+        
+        # Append to generated sequence
+        generated_ids = torch.cat([generated_ids, next_token], dim=1)
+        
+        # Stop if EOS token
+        eos_token_id = tokenizer.eos_token_id if hasattr(tokenizer, 'eos_token_id') else None
+        if eos_token_id and next_token.item() == eos_token_id:
+            break
+    
+    return generated_ids
+
+
 def _generate_translation_generation(model, tokenizer, source_text, device,
-                                     max_new_tokens=100, temperature=0.7, top_k=50, greedy=False):
+                                    max_new_tokens=100, temperature=0.7, top_k=50, greedy=False):
     """
     Generate translation using model.generate() - actual autoregressive generation.
     
@@ -2016,14 +2071,32 @@ def _generate_translation_generation(model, tokenizer, source_text, device,
         temperature = 0.0
         top_k = 1
     
-    # Generate translation using model.generate()
+    # Generate translation using model.generate() or manual loop
     with torch.no_grad():
-        generated_ids = model.generate(
-            prompt_ids,
-            max_new_tokens=max_new_tokens,
-            temperature=temperature if temperature > 0 else 1.0,
-            top_k=top_k
-        )
+        # Check if model has generate method (HuggingFace models should have it)
+        if hasattr(model, 'generate') and callable(getattr(model, 'generate', None)):
+            try:
+                # Try HuggingFace-style generation with proper parameters
+                generate_kwargs = {
+                    'max_new_tokens': max_new_tokens,
+                    'do_sample': (temperature > 0 and not greedy),
+                }
+                
+                if temperature > 0 and not greedy:
+                    generate_kwargs['temperature'] = temperature
+                if top_k and top_k > 0:
+                    generate_kwargs['top_k'] = top_k
+                if hasattr(tokenizer, 'eos_token_id') and tokenizer.eos_token_id:
+                    generate_kwargs['pad_token_id'] = tokenizer.eos_token_id
+                
+                generated_ids = model.generate(prompt_ids, **generate_kwargs)
+            except Exception as e:
+                # Fallback to manual generation if generate() fails
+                print(f"Warning: model.generate() failed: {e}, using manual generation")
+                generated_ids = _manual_generate(model, tokenizer, prompt_ids, max_new_tokens, temperature, top_k, greedy, device)
+        else:
+            # Use manual generation for models without generate() method
+            generated_ids = _manual_generate(model, tokenizer, prompt_ids, max_new_tokens, temperature, top_k, greedy, device)
     
     # Decode generated text
     generated_full = tokenizer.decode(generated_ids[0].tolist(), skip_special_tokens=True)
