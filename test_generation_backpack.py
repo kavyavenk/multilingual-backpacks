@@ -100,7 +100,7 @@ def main():
     print("="*70)
     
     # Load model
-    model_path = 'out/backpack_full'
+    model_path = '/content/drive/MyDrive/multi'
     print(f"\nLoading model from {model_path}...")
     model, config = load_model(model_path, device)
     model.eval()
