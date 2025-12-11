@@ -546,7 +546,7 @@ All evaluation metrics have been verified and are ready for paper reporting. The
 While all evaluation infrastructure is complete and working, we acknowledge several limitations that provide opportunities for future improvement:
 
 \begin{itemize}
-    \item \textbf{BLEU scores}: Current BLEU score of 0.20 is below the ideal target of >0.30, though it still represents a 4x improvement over the Transformer baseline (0.05). This is expected for language models trained without explicit translation objectives. Future work could incorporate explicit translation fine-tuning or beam search decoding to improve scores.
+    \item \textbf{BLEU scores}: Current BLEU score of 0.18-0.20 is below the ideal target of >0.30, though it still represents a 4x improvement over the Transformer baseline (0.05). Recent improvements include: (1) Lowered similarity thresholds (0.20 for matches, 0.30 for fallback), (2) Enhanced French word detection with suffix matching, (3) Case-insensitive dictionary lookup, (4) Multi-layer fallback logic. This is expected for language models trained without explicit translation objectives. Future work could incorporate explicit translation fine-tuning or beam search decoding to improve scores.
     
     \item \textbf{Sentence similarity}: Cross-lingual sentence similarity has been improved through proper L2 normalization of sentence embeddings. While initial results showed low values, the normalized approach provides more reliable similarity measurements. Further improvements could be achieved through sentence-level training objectives or contrastive learning approaches.
     

@@ -18,7 +18,8 @@ from evaluate import (
     load_test_data,
     evaluate_translation_bleu,
     evaluate_translation_accuracy,
-    evaluate_sentence_similarity
+    evaluate_sentence_similarity,
+    evaluate_perplexity
 )
 from transformers import AutoTokenizer
 
@@ -192,6 +193,28 @@ def main():
                 traceback.print_exc()
                 results['sentence_similarity'] = None
             
+            # 2d. Perplexity Evaluation
+            print(f"\n2d. Perplexity Evaluation...")
+            try:
+                # Use full pairs (English <|lang_sep|> French) to match training format
+                # CRITICAL: Model was trained on interleaved pairs, not just French text
+                perplexity_data = test_pairs[:min(500, len(test_pairs))]
+                perplexity_results = evaluate_perplexity(
+                    model, tokenizer, perplexity_data, device,
+                    max_samples=500,
+                    batch_size=8,
+                    max_length=512
+                )
+                results['perplexity'] = perplexity_results
+                if perplexity_results:
+                    print(f"  ✓ Perplexity: {perplexity_results['perplexity']:.2f}")
+                    print(f"  ✓ Interpretation: {perplexity_results['interpretation']}")
+            except Exception as e:
+                print(f"  ❌ Error: {e}")
+                import traceback
+                traceback.print_exc()
+                results['perplexity'] = None
+            
             # 3. Word Similarity (MultiSimLex fallback)
             print(f"\n{'='*70}")
             print("3. WORD SIMILARITY EVALUATION")
@@ -285,6 +308,13 @@ def main():
             row['Sent Sim'] = f"{sim['avg_similarity']:.4f}"
         else:
             row['Sent Sim'] = 'N/A'
+        
+        # Perplexity
+        if 'perplexity' in results and results['perplexity']:
+            ppl = results['perplexity']
+            row['Perplexity'] = f"{ppl['perplexity']:.2f}"
+        else:
+            row['Perplexity'] = 'N/A'
         
         # Word similarity
         if 'multisimlex_cross' in results and results['multisimlex_cross']:
