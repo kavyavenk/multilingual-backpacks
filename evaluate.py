@@ -13,26 +13,6 @@ from scipy.stats import spearmanr
 from model import BackpackLM, StandardTransformerLM
 from configurator import ModelConfig
 
-# Sense labels for 16-sense Backpack model - Clearer, more distinct labels
-SENSE_LABELS = {
-    0: "Parliamentary Discourse & Debate",
-    1: "Parliamentary Discourse & Debate",
-    2: "Adjectives & Descriptive Terms",
-    3: "Negation & Absence",
-    4: "Temporal & Small Scale",
-    5: "European Union & Future Planning",
-    6: "Debate & Discussion",
-    7: "Progress & Development",
-    8: "Prepositions & Spatial Relations",
-    9: "Future & Temporal Planning",
-    10: "Parliamentary Discourse & Debate",
-    11: "Negation & Absence",
-    12: "Problems & Issues",
-    13: "Future & Temporal Planning",
-    14: "States & Countries",
-    15: "European Union & Institutions",
-}
-
 
 def load_huggingface_model(model_name, device):
     """
