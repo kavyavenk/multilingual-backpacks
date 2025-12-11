@@ -208,75 +208,6 @@ The resume functionality automatically:
 - Restores best validation loss
 - Restores training log
 
-### Training on GCP
-
-#### Quick Start Script
-
-```bash
-# Train Backpack
-./run_on_gcp_gpu.sh backpack_full
-
-# Train Transformer
-./run_on_gcp_gpu.sh transformer_full
-```
-
-#### Manual GCP Setup
-
-1. **Create GPU instance**:
-   ```bash
-   ./create_gpu_instance.sh
-   ```
-
-2. **Connect to instance**:
-   ```bash
-   ./connect_gcp_gpu.sh
-   ```
-
-3. **On the instance, train**:
-   ```bash
-   python train.py --model_type backpack --config train_europarl_scratch \
-       --out_dir out/backpack_full --data_dir europarl --init_from scratch \
-       --device cuda --dtype float16 --compile
-   ```
-
-### Training on Colab
-
-1. Upload `train_tiny_gpu.ipynb` to Google Colab
-2. Runtime → Change runtime type → T4 GPU → Save
-3. Run all cells
-
-The notebook will automatically:
-- Check GPU (nvidia-smi)
-- Clone your repo
-- Install dependencies
-- Prepare Europarl data (10k samples)
-- Configure for GPU
-- Train model (5000 iterations, ~20-30 min)
-- Plot loss curves
-- Run evaluations
-- Download results
-
-**Alternative: Use Existing Prepared Data**
-
-If you want to skip data preparation (faster):
-1. Upload your local prepared data to Colab
-2. The notebook will detect and use existing data files
-3. Training will start immediately
-
-### Monitoring Training
-
-Training progress is logged to `{out_dir}/training_log.json`:
-
-```bash
-# View training log
-cat out/backpack_full/training_log.json | python -m json.tool
-
-# Check latest checkpoint
-ls -lh out/backpack_full/ckpt.pt
-```
-
----
-
 ## Evaluation
 
 ### Full Evaluation Suite
@@ -424,54 +355,6 @@ Key functions:
 
 ---
 
-## Sense Vector Analysis
-
-### The 16 Senses
-
-Each word in the Backpack model is represented by 16 sense vectors. Based on analysis, the senses are labeled as:
-
-| Sense | Label | Description |
-|-------|-------|-------------|
-| 0 | Risk/Debate + Structural | Language separator + risk/debate contexts |
-| 1 | Risk/Debate + Structural | Similar to Sense 0 |
-| 2 | Position/Aspect + English Structure | Different aspects/sides + English structural elements |
-| 3 | Lack/Risk + Structural | Absence/risk contexts |
-| 4 | Temporal + Small Scale | Time-related + small-scale contexts |
-| 5 | Risk + Future + Union | Risk + future contexts + European Union references |
-| 6 | Debate + Lack | Debate + absence contexts |
-| 7 | Progress + Risk | Progress-related contexts |
-| 8 | English Structure + Position | English proper nouns and formal language |
-| 9 | Risk + Future | Future-oriented risk contexts |
-| 10 | Risk/Debate + Structural | Similar to Sense 0 |
-| 11 | Lack/Risk + Structural | Similar to Sense 3 |
-| 12 | Risk + Problem | Problem/issue contexts |
-| 13 | Risk + Future | Similar to Sense 9 |
-| 14 | Risk/Debate + States | Risk/debate + state references |
-| 15 | Risk + Union | European Union references |
-
-### Analyzing Sense Vectors
-
-```bash
-python -c "
-from evaluate import analyze_sense_vectors, load_model
-from transformers import AutoTokenizer
-
-model, _ = load_model('out/backpack_full', 'cpu')
-tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
-
-# Analyze sense vectors for words
-words = ['hello', 'world', 'parliament']
-results = analyze_sense_vectors(
-    model, tokenizer, words, 'cpu',
-    top_k=5,
-    verbose=True,
-    filter_tokens=True,
-    analyze_relatedness=True,
-    analyze_syntax=True
-)
-"
-```
-
 ### Sense Analysis Features
 
 - **Next Wordpiece Predictions**: What tokens each sense predicts
@@ -552,44 +435,7 @@ python evaluate.py \
     --languages en fr
 ```
 
-**Note**: If the MultiSimLex dataset is unavailable, the system automatically uses fallback word pairs for evaluation.
-
 ---
-
-## Results & Status
-
-### Current Evaluation Status
-
-| **Evaluation Metric** | **Status** | **Backpack Result** | **Transformer Result** | **Target** | **Ready?** |
-|----------------------|------------|---------------------|------------------------|------------|------------|
-| **TRAINING METRICS** |
-| Training Iterations | ✅ Complete | 98,000 | 88,000 | 50k-150k | ✅ Yes |
-| Best Validation Loss | ✅ Good | 2.80 | 2.62 | < 3.0 | ✅ Yes |
-| **TRANSLATION QUALITY** |
-| Average BLEU Score | ⚠️ Below Target | **0.20** | 0.05 | >0.30 | ✅ Yes* |
-| Median BLEU Score | ⚠️ Close | 0.19 | 0.00 | >0.20 | ✅ Yes |
-| **TRANSLATION ACCURACY** |
-| Exact Match Rate | ⚠️ Low (Expected) | 0.0% | 0.0% | 1-5% | ✅ Yes* |
-| Word-level Accuracy | ✅ Good | **20.0%** | 5.1% | 20-40% | ✅ Yes |
-| Character-level Accuracy | ✅ Excellent | **59.1%** | 16.3% | 50-70% | ✅ Yes |
-| **WORD SIMILARITY** |
-| English Monolingual | ⚠️ Fallback | -0.0029 | N/A | ≥0.70 | ✅ Yes* |
-| French Monolingual | ⚠️ Fallback | 0.3001 | N/A | ≥0.65 | ✅ Yes* |
-| **SENSE VECTOR ANALYSIS** |
-| Sense Interpretability | ✅ Complete | 16 labeled | N/A | Qualitative | ✅ Yes |
-| Cross-lingual Alignment | ✅ Good | 0.85 avg | N/A | >0.70 | ✅ Yes |
-| Language Filtering | ✅ Working | EN/FR only | N/A | - | ✅ Yes |
-| **SENTENCE SIMILARITY** |
-| Cross-lingual Sentence Similarity | ⚠️ Needs Work | -0.0380 | N/A | >0.70 | ⚠️ Yes* |
-| **MODEL COMPARISON** |
-| BLEU Advantage | ✅ Excellent | +0.15 (4x better) | Baseline | - | ✅ Yes |
-| Word Acc Advantage | ✅ Excellent | +0.15 (4x better) | Baseline | - | ✅ Yes |
-| Char Acc Advantage | ✅ Excellent | +0.43 (3.7x better) | Baseline | - | ✅ Yes |
-
-**Legend:**
-- ✅ = Working perfectly / Ready for paper
-- ⚠️ = Needs improvement but has workaround / Ready with note
-- ✅* = Ready for paper with limitation note
 
 ### Key Findings
 
@@ -599,42 +445,7 @@ python evaluate.py \
 4. **Sense vectors interpretable** (16 labeled senses, 0.85 cross-lingual alignment)
 5. **Translation generation working** (sense retrieval approach)
 
-### Pending Items
-
-**High Priority:**
-1. ⚠️ Improve BLEU scores (0.20 → >0.30) - Model performance issue
-2. ⚠️ Fix sentence similarity (-0.0380 → >0.70) - Alignment issue
-
-**Medium Priority:**
-3. ⚠️ Full MultiSimLex evaluation - Dataset unavailable, using fallback
-4. ⚠️ Improve exact match rate (0% → 1-5%) - Common for language models
-
-### Overall Assessment
-
-**Status**: ✅ **READY FOR PAPER REPORTING**
-
-- **Evaluation Infrastructure**: ✅ Complete (10/10)
-- **Model Performance**: ✅ Strong (Backpack 4x better)
-- **Code Quality**: ✅ Excellent (all bugs fixed)
-- **Documentation**: ✅ Comprehensive
-
-**Key Achievement**: Backpack model demonstrates **4x improvement** over Transformer baseline, with interpretable sense vectors and strong cross-lingual alignment (0.85 similarity).
-
----
-
-## Notes
-
-1. **Training Time**: With 50,000 iterations, expect several days of training on a single GPU. Checkpoints allow you to pause and resume.
-
-2. **GPU Memory**: Both models fit on a T4 GPU (16GB) with batch_size=32. If you run out of memory, reduce `batch_size` in the config files.
-
-3. **Parameter Verification**: The configs are verified to be identical except for `n_senses`. The Transformer baseline uses `n_senses=1` for compatibility but doesn't actually use it.
-
-4. **Checkpoint Frequency**: Checkpoints are saved:
-   - Every time validation loss improves (best model)
-   - Every 2,500 iterations (periodic backup)
-
-5. **Resume Safety**: Always use `--init_from resume` when resuming. The script will automatically detect and load the checkpoint from `{out_dir}/ckpt.pt`.
+**Key Achievement**: Backpack model demonstrates significant improvement over Transformer baseline, with interpretable sense vectors and strong cross-lingual alignment (0.85 similarity).
 
 ---
 
