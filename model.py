@@ -95,6 +95,38 @@ class Block(nn.Module):
         return x
 
 
+class LMContextualizationAttention(nn.Module):
+    """Compute attention weights over sense vectors using multi-head causal transformer attention"""
+    def __init__(self, config, n_senses):
+        super().__init__()
+        self.n_senses = n_senses
+        self.n_head = config.n_head
+        self.n_embd = config.n_embd
+        self.dropout = config.dropout
+        self.flash = hasattr(torch.nn.functional, 'scaled_dot_product_attention')
+        self.c_attn = nn.Linear(config.n_embd, 2 * config.n_embd, bias=False)  # only q,k for attention
+        self.attn_dropout = nn.Dropout(config.dropout)
+        # causal mask
+        self.register_buffer("bias", torch.tril(torch.ones(config.block_size, config.block_size))
+                             .view(1, 1, config.block_size, config.block_size))
+
+    def forward(self, x):
+        """
+        x: (B, T, n_embd)
+        returns: attention weights over n_senses (B, T, n_senses, T)
+        """
+        B, T, C = x.size()
+        q, k = self.c_attn(x).split(C, dim=2)  # (B, T, C)
+        # reshape for multi-head, multi-sense attention
+        q = q.view(B, T, self.n_senses, C // self.n_senses).transpose(1, 2)  # (B, n_senses, T, head_dim)
+        k = k.view(B, T, self.n_senses, C // self.n_senses).transpose(1, 2)
+        att = (q @ k.transpose(-2, -1)) / (k.size(-1) ** 0.5)  # scaled dot-product
+        att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float('-inf'))
+        att = F.softmax(att, dim=-1)
+        att = self.attn_dropout(att)
+        return att  # (B, n_senses, T, T)
+
+
 class BackpackLM(nn.Module):
     """
     Backpack Language Model
@@ -123,13 +155,9 @@ class BackpackLM(nn.Module):
         )
 
 
-        
-        # Sense predictor: predicts weights for each sense
-        self.sense_predictor = nn.Sequential(
-            nn.Linear(config.n_embd, config.n_embd),
-            nn.GELU(),
-            nn.Linear(config.n_embd, self.n_senses)
-        )
+        # Use transformer attention to produce sense weights
+        self.sense_attention = LMContextualizationAttention(config, self.n_senses)
+
         
         # Position embeddings
         self.pos_embeddings = nn.Embedding(config.block_size, config.n_embd)
@@ -177,23 +205,39 @@ class BackpackLM(nn.Module):
         pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
         pos_emb = self.pos_embeddings(pos)  # (T, n_embd)
         
-        # Use position embeddings as initial context to predict sense weights
-        context = pos_emb.unsqueeze(0).expand(B, -1, -1)  # (B, T, n_embd)
-        sense_weights = self.sense_predictor(context)  # (B, T, n_senses)
-        sense_weights = F.softmax(sense_weights, dim=-1)  # (B, T, n_senses)
+        # Compute sense weights using multi-head transformer attention
+        att_weights = self.sense_attention(token_embs + pos_emb.unsqueeze(0))  # (B, n_senses, T, T)
+        # average over past tokens to get a sense weight per token
 
         x_chunks=[]
+
         for start in range(0, T, chunk_size):
             end = min(start + chunk_size, T)
-            token_chunk = token_embs[:, start:end, :]             # (B, chunk, n_embd)
-            weights_chunk = sense_weights[:, start:end, :]        # (B, chunk, n_senses)
-    
-            # Compute sense vectors on-the-fly
-            sense_embs_chunk = self.sense_layer(token_chunk)      # (B, chunk, n_embd * n_senses)
-            sense_embs_chunk = sense_embs_chunk.view(B, end-start, self.n_senses, self.config.n_embd)
-    
-            # Weighted sum
-            x_chunk = torch.einsum('btsd,bts->btd', sense_embs_chunk, weights_chunk)
+        
+            # token embeddings for this chunk
+            token_chunk = token_embs[:, start:end, :]  # (B, chunk, n_embd)
+        
+            # compute sense embeddings on-the-fly
+            sense_embs_chunk = self.sense_layer(token_chunk)  # (B, chunk, n_embd * n_senses)
+            sense_embs_chunk = sense_embs_chunk.view(B, end - start, self.n_senses, self.config.n_embd)
+            # (B, chunk, n_senses, n_embd)
+        
+            # slice attention weights for this chunk
+            # att_weights: (B, n_senses, T, T)
+            # we want attention from all past tokens up to end
+            att_chunk = att_weights[:, :, start:end, :end]  # (B, n_senses, chunk, T_total_so_far)
+        
+            # slice sense embeddings for all positions attended to
+            sense_embs_all = self.sense_layer(token_embs[:, :end, :])  # (B, end, n_senses * n_embd)
+            sense_embs_all = sense_embs_all.view(B, end, self.n_senses, self.config.n_embd)  # (B, end, n_senses, n_embd)
+            sense_embs_all = sense_embs_all.permute(0, 2, 1, 3)  # (B, n_senses, end, n_embd)
+        
+            # multiply attention weights with sense embeddings
+            # (B, n_senses, chunk, end) @ (B, n_senses, end, n_embd) -> (B, n_senses, chunk, n_embd)
+            weighted_senses = torch.matmul(att_chunk, sense_embs_all)
+        
+            # sum over senses to get token representation
+            x_chunk = weighted_senses.sum(dim=1)  # (B, chunk, n_embd)
             x_chunks.append(x_chunk)
         x = torch.cat(x_chunks, dim=1)
         
@@ -413,4 +457,3 @@ class StandardTransformerLM(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1)
         
         return idx
-
