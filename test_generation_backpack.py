@@ -40,8 +40,6 @@ def evaluate_generation_bleu(model, tokenizer, test_pairs, device, max_samples=5
             generated_text = generate_translation(
                 model, tokenizer, source_text, device,
                 max_new_tokens=100,
-                temperature=0.3,
-                top_k=10,
                 greedy=True,  # Greedy decoding for best quality
                 use_sense_retrieval=False  # KEY: Use generation
             )
