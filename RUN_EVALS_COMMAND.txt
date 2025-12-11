@@ -1,0 +1,46 @@
+# Command to Run Comprehensive Evaluation Locally
+
+## Quick Start
+```bash
+cd /Users/itskavya/Documents/multilingual-backpacks
+python run_all_models_evaluation.py
+```
+
+## What This Does
+Evaluates all 3 models:
+1. **Backpack** (`out/backpack_full/ckpt.pt`)
+2. **Finetuned Backpack** (`out/finetuning_best_model_weights.pt`)
+3. **Transformer** (`out/transformer_full/ckpt.pt`)
+
+## Evaluation Metrics
+- ✅ **BLEU Score** (Translation Quality) - Target: >0.30
+- ✅ **Translation Accuracy** (Word-level, Character-level, Exact Match)
+- ✅ **Sentence Similarity** (Cross-lingual) - Target: >0.70
+- ✅ **Perplexity** (Language Modeling) - Lower is better
+- ✅ **Word Similarity** (MultiSimLex - Monolingual & Cross-lingual)
+- ✅ **Sense Vector Analysis** (16 labeled senses)
+
+## Output Files
+Results are saved to:
+- `out/backpack_full/evaluation_results.json`
+- `out/backpack_finetuned_evaluation_results.json`
+- `out/transformer_full/evaluation_results.json`
+- `out/model_comparison.json`
+
+## Expected Runtime
+- ~10-30 minutes depending on GPU/CPU
+- Uses 500 translation samples by default
+- Can be interrupted with Ctrl+C (saves partial results)
+
+## Requirements
+- PyTorch
+- transformers
+- numpy
+- scipy
+- sacrebleu (optional, has fallback)
+
+## GPU Usage
+Automatically detects CUDA if available. To force CPU:
+```bash
+CUDA_VISIBLE_DEVICES="" python run_all_models_evaluation.py
+```

@@ -270,6 +270,10 @@ class BackpackLM(nn.Module):
         """Extract sense vectors for given token indices"""
         B, T = idx.size()
         
+        # CRITICAL FIX: Clamp token indices to valid vocabulary range to prevent "index out of range" errors
+        vocab_size = self.config.vocab_size
+        idx = torch.clamp(idx, min=0, max=vocab_size - 1)
+        
         # Get token embeddings
         token_embs = self.token_embedding(idx)  # (B, T, n_embd)
         

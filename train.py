@@ -203,6 +203,17 @@ def main():
             betas=(config.beta1, config.beta2)
         )
     
+    # Learning rate decay schedule
+    # Decay LR by 50% at 50k iterations, 75% at 100k iterations
+    lr_decay_milestones = {
+        50000: 0.5,   # Reduce to 50% of original LR at 50k iterations
+        100000: 0.25, # Reduce to 25% of original LR at 100k iterations
+        150000: 0.1,  # Reduce to 10% of original LR at 150k iterations
+    }
+    initial_lr = config.learning_rate
+    current_lr = initial_lr
+    last_lr_update = 0
+    
     # Training loop
     print("Starting training...")
     
@@ -215,7 +226,19 @@ def main():
         iter_num = checkpoint.get('iter_num', 0)
         best_val_loss = checkpoint.get('best_val_loss', 1e9)
         optimizer.load_state_dict(checkpoint.get('optimizer', optimizer.state_dict()))
-        print(f"Resumed: iter_num={iter_num}, best_val_loss={best_val_loss:.4f}")
+        
+        # Restore learning rate from optimizer state
+        current_lr = optimizer.param_groups[0]['lr']
+        print(f"Resumed: iter_num={iter_num}, best_val_loss={best_val_loss:.4f}, lr {current_lr:.2e}")
+        
+        # Check if we've passed any milestones and update current_lr accordingly
+        for milestone in sorted(lr_decay_milestones.keys()):
+            if iter_num >= milestone:
+                decay_factor = lr_decay_milestones[milestone]
+                expected_lr = initial_lr * decay_factor
+                # If optimizer LR matches expected, use it; otherwise keep current
+                if abs(current_lr - expected_lr) < 1e-6:
+                    current_lr = expected_lr
         
         # Load training log from checkpoint if available, otherwise from file
         if 'training_log' in checkpoint:
@@ -264,6 +287,10 @@ def main():
             training_log['iterations'].append(iter_num)
             training_log['train_loss'].append(losses['train'])
             training_log['val_loss'].append(losses['val'])
+            # Log learning rate if it changed
+            if 'learning_rate' not in training_log:
+                training_log['learning_rate'] = []
+            training_log['learning_rate'].append(current_lr)
             
             # Save log file
             with open(log_file, 'w') as f:
@@ -311,6 +338,15 @@ def main():
         with ctx:
             logits, loss = model(X, Y)
         
+        # Learning rate decay
+        if iter_num in lr_decay_milestones:
+            decay_factor = lr_decay_milestones[iter_num]
+            new_lr = initial_lr * decay_factor
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = new_lr
+            current_lr = new_lr
+            print(f"✓ Learning rate decayed to {new_lr:.2e} ({decay_factor*100:.0f}% of original) at iteration {iter_num}")
+        
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_clip)
@@ -318,7 +354,7 @@ def main():
         
         # Logging
         if iter_num % config.log_interval == 0:
-            print(f"iter {iter_num}: loss {loss.item():.4f}")
+            print(f"iter {iter_num}: loss {loss.item():.4f}, lr {current_lr:.2e}")
         
         # Track top activating words (for Backpack models only, periodically)
         track_words_interval = max(config.eval_interval // 2, 50)  # At least every 50 iterations

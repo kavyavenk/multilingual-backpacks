@@ -17,7 +17,7 @@ config = ModelConfig(
     # Training
     batch_size=32,  # Adjust based on GPU memory
     learning_rate=3e-4,
-    max_iters=50000,  # Train as much as possible - can resume from checkpoints
+    max_iters=200000,  # Increased to allow for longer training with LR decay
     weight_decay=1e-1,
     beta1=0.9,
     beta2=0.95,
@@ -38,4 +38,3 @@ config = ModelConfig(
     tokenizer_name='xlm-roberta-base',
     languages=['en', 'fr'],
 )
-
