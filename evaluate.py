@@ -1590,146 +1590,228 @@ def _evaluate_word_similarity_fallback(model, tokenizer, word_pairs, device, lan
 }
 
 
-def evaluate_multisimlex(model, tokenizer, device, language='en', max_samples=None):
+def load_multisimlex_from_csv(data_dir, language="en", max_samples=None):
+    import os
+    import pandas as pd
+
+    lang = language.upper()
+    word1_col = f"{lang} 1"
+    word2_col = f"{lang} 2"
+    score_col = lang
+
+    trans = pd.read_csv(os.path.join(data_dir, "translation.csv"))
+    scores = pd.read_csv(os.path.join(data_dir, "scores.csv"))
+
+    df = trans[["ID", word1_col, word2_col]].merge(
+        scores[["ID", score_col]], on="ID"
+    )
+
+    df = df.rename(columns={
+        word1_col: "word1",
+        word2_col: "word2",
+        score_col: "score",
+    })
+
+    df = df.dropna(subset=["word1", "word2", "score"])
+    df = df[df["score"] > 0]  # optional: remove missing/zero ratings
+
+    if max_samples is not None:
+        df = df.head(max_samples)
+
+    return list(df[["word1", "word2", "score"]].itertuples(index=False, name=None))
+
+
+def evaluate_multisimlex(
+    model,
+    tokenizer,
+    device,
+    language="en",
+    max_samples=None,
+    data_dir="data/multisimlex",
+):
     """
-    Evaluate on MultiSimLex-999 word similarity benchmark.
-    
-    Args:
-        model: Trained Backpack or StandardTransformer model
-        tokenizer: Tokenizer instance
-        device: Device to run on
-        language: Language code ('en', 'fr', etc.)
-        max_samples: Maximum number of word pairs to evaluate (None = all)
-    
-    Returns:
-        dict: Results with correlation, p-value, and benchmark comparison
+    Evaluate word-level lexical similarity on Multi-SimLex using the
+    NoRaRe CSV format.
+
+    Expects:
+        data_dir/translation.csv
+        data_dir/scores.csv
+
+    For language="en", uses:
+        translation.csv columns: ENG 1, ENG 2
+        scores.csv column: ENG
+
+    For language="fr", uses:
+        translation.csv columns: FRA 1, FRA 2
+        scores.csv column: FRA
     """
-    try:
-        from datasets import load_dataset
-    except ImportError:
-        print("Error: datasets library not installed. Install with: pip install datasets")
-        return None
-    
-    print(f"\n{'='*60}")
-    print(f"MultiSimLex Evaluation - {language.upper()}")
-    print(f"{'='*60}")
-    
-    try:
-        # Load MultiSimLex dataset
-        dataset = load_dataset("Helsinki-NLP/multisimlex", language)
-    except Exception as e:
-        print(f"Error loading MultiSimLex dataset for {language}: {e}")
-        print("Trying alternative dataset name...")
-        try:
-            dataset = load_dataset("multisimlex", language)
-        except Exception as e2:
-            print(f"Could not load MultiSimLex from HuggingFace: {e2}")
-            print("Attempting to use fallback word pairs for evaluation...")
-            # Fallback: Use a small set of common word pairs for evaluation
-            fallback_pairs = _get_fallback_word_pairs(language)
-            if fallback_pairs:
-                print(f"Using {len(fallback_pairs)} fallback word pairs for evaluation")
-                return _evaluate_word_similarity_fallback(model, tokenizer, fallback_pairs, device, language)
-            else:
-                print("No fallback available. Please install datasets library or provide word pairs manually.")
-                return None
-    
-    model_similarities = []
-    human_ratings = []
-    skipped = 0
-    
-    # Limit dataset size if max_samples specified
-    test_data = dataset['test']
-    if max_samples is not None and max_samples < len(test_data):
-        test_data = test_data.select(range(min(max_samples, len(test_data))))
-        print(f"Using subset: {len(test_data)} word pairs (out of {len(dataset['test'])} total)")
-    else:
-        print(f"Processing {len(test_data)} word pairs...")
-    
-    for item in test_data:
-        word1 = item['word1']
-        word2 = item['word2']
-        human_score = item['score']  # 0-10 scale
-        
-        try:
-            # Get word representations
-            reprs = get_word_representations(model, tokenizer, [word1, word2], device)
-            
-            if word1 not in reprs or word2 not in reprs:
-                skipped += 1
-                continue
-            
-            repr1 = reprs[word1]
-            repr2 = reprs[word2]
-            
-            # IMPROVED: Use best sense (highest norm) instead of mean for better similarity
-            # This aligns with translation approach and should improve correlation
-            if repr1.ndim > 1 and repr1.shape[0] > 1:
-                # Multiple senses - use best sense (highest norm)
-                norms1 = np.linalg.norm(repr1, axis=1)
-                norms2 = np.linalg.norm(repr2, axis=1)
-                best_idx1 = np.argmax(norms1)
-                best_idx2 = np.argmax(norms2)
-                repr1_mean = repr1[best_idx1]
-                repr2_mean = repr2[best_idx2]
-            else:
-                # Single embedding (Transformer) or already averaged
-                repr1_mean = repr1.mean(axis=0) if repr1.ndim > 1 else repr1
-                repr2_mean = repr2.mean(axis=0) if repr2.ndim > 1 else repr2
-            
-            # L2 normalize before cosine similarity
-            repr1_norm = repr1_mean / (np.linalg.norm(repr1_mean) + 1e-8)
-            repr2_norm = repr2_mean / (np.linalg.norm(repr2_mean) + 1e-8)
-            
-            # Compute cosine similarity
-            cosine_sim = np.dot(repr1_norm, repr2_norm)
-            cosine_sim = np.clip(cosine_sim, -1.0, 1.0)
-            
-            model_similarities.append(cosine_sim)
-            human_ratings.append(human_score)
-            
-        except Exception as e:
-            skipped += 1
-            continue
-    
-    if len(model_similarities) == 0:
-        print("Error: No valid word pairs processed")
-        return None
-    
-    # Compute Spearman correlation
-    correlation, p_value = spearmanr(model_similarities, human_ratings)
-    
-    # Compare with benchmarks
-    benchmarks = MULTISIMLEX_BENCHMARKS.get(language, MULTISIMLEX_BENCHMARKS['en'])
-    if correlation >= benchmarks['excellent']:
-        benchmark_level = "EXCELLENT"
-    elif correlation >= benchmarks['good']:
-        benchmark_level = "GOOD"
-    elif correlation >= benchmarks['baseline']:
-        benchmark_level = "BASELINE"
-    else:
-        benchmark_level = "NEEDS IMPROVEMENT"
-    
-    print(f"\nResults:")
-    print(f"  Spearman correlation: {correlation:.4f}")
-    print(f"  P-value: {p_value:.4f}")
-    print(f"  Number of pairs: {len(human_ratings)}")
-    print(f"  Skipped pairs: {skipped}")
-    print(f"\nBenchmark Comparison:")
-    print(f"  Performance level: {benchmark_level}")
-    print(f"  Excellent threshold: {benchmarks['excellent']:.2f}")
-    print(f"  Good threshold: {benchmarks['good']:.2f}")
-    print(f"  Baseline threshold: {benchmarks['baseline']:.2f}")
-    
-    return {
-        'correlation': correlation,
-        'p_value': p_value,
-        'n_pairs': len(human_ratings),
-        'skipped': skipped,
-        'benchmark_level': benchmark_level,
-        'language': language
+    import os
+    import pandas as pd
+    import numpy as np
+    from scipy.stats import spearmanr
+    from sklearn.metrics.pairwise import cosine_similarity
+
+    lang_map = {
+        "en": "ENG",
+        "eng": "ENG",
+        "fr": "FRA",
+        "fra": "FRA",
     }
 
+    lang = lang_map.get(language.lower(), language.upper())
+
+    translation_path = os.path.join(data_dir, "translation.csv")
+    scores_path = os.path.join(data_dir, "scores.csv")
+
+    if not os.path.exists(translation_path):
+        raise FileNotFoundError(f"Missing translation file: {translation_path}")
+
+    if not os.path.exists(scores_path):
+        raise FileNotFoundError(f"Missing scores file: {scores_path}")
+
+    trans = pd.read_csv(translation_path)
+    scores = pd.read_csv(scores_path)
+
+    word1_col = f"{lang} 1"
+    word2_col = f"{lang} 2"
+    score_col = lang
+
+    required_trans_cols = ["ID", word1_col, word2_col]
+    required_score_cols = ["ID", score_col]
+
+    for col in required_trans_cols:
+        if col not in trans.columns:
+            raise ValueError(
+                f"Column {col} not found in translation.csv. "
+                f"Available columns: {list(trans.columns)}"
+            )
+
+    for col in required_score_cols:
+        if col not in scores.columns:
+            raise ValueError(
+                f"Column {col} not found in scores.csv. "
+                f"Available columns: {list(scores.columns)}"
+            )
+
+    df = trans[required_trans_cols].merge(
+        scores[required_score_cols],
+        on="ID",
+        how="inner",
+    )
+
+    df = df.rename(
+        columns={
+            word1_col: "word1",
+            word2_col: "word2",
+            score_col: "human_score",
+        }
+    )
+
+    df = df.dropna(subset=["word1", "word2", "human_score"])
+
+    # Some score entries may be strings depending on CSV parsing.
+    df["human_score"] = pd.to_numeric(df["human_score"], errors="coerce")
+    df = df.dropna(subset=["human_score"])
+
+    # Optional: remove rows with no usable human judgment.
+    # In your screenshot, 0.0 appears often; keep it unless you confirm
+    # that 0 means missing rather than "not similar".
+    # df = df[df["human_score"] > 0]
+
+    if max_samples is not None:
+        df = df.head(max_samples)
+
+    model.eval()
+
+    predicted_scores = []
+    human_scores = []
+    evaluated_pairs = 0
+    skipped_pairs = 0
+
+    def get_word_embedding(word):
+        """
+        Returns a single vector for a word/phrase.
+
+        For Backpack models, this first tries to use sense vectors if the model
+        exposes them. Otherwise, it falls back to token embeddings.
+        """
+        encoded = tokenizer(
+            str(word),
+            return_tensors="pt",
+            add_special_tokens=False,
+        )
+
+        input_ids = encoded["input_ids"].to(device)
+
+        if input_ids.numel() == 0:
+            return None
+
+        with torch.no_grad():
+            # Fallback: use model token embedding matrix.
+            if hasattr(model, "token_embedding_table"):
+                emb = model.token_embedding_table(input_ids)
+            elif hasattr(model, "transformer") and hasattr(model.transformer, "wte"):
+                emb = model.transformer.wte(input_ids)
+            elif hasattr(model, "get_input_embeddings"):
+                emb = model.get_input_embeddings()(input_ids)
+            else:
+                raise AttributeError(
+                    "Could not find token embeddings on model. "
+                    "Add the correct embedding accessor for your model class."
+                )
+
+            # Average across subword tokens.
+            emb = emb.mean(dim=1).squeeze(0)
+
+        return emb.detach().cpu().numpy()
+
+    for _, row in df.iterrows():
+        word1 = row["word1"]
+        word2 = row["word2"]
+        human_score = row["human_score"]
+
+        try:
+            emb1 = get_word_embedding(word1)
+            emb2 = get_word_embedding(word2)
+
+            if emb1 is None or emb2 is None:
+                skipped_pairs += 1
+                continue
+
+            sim = cosine_similarity(
+                emb1.reshape(1, -1),
+                emb2.reshape(1, -1),
+            )[0][0]
+
+            predicted_scores.append(float(sim))
+            human_scores.append(float(human_score))
+            evaluated_pairs += 1
+
+        except Exception:
+            skipped_pairs += 1
+            continue
+
+    if len(predicted_scores) < 2:
+        return {
+            "language": lang,
+            "spearman": None,
+            "p_value": None,
+            "num_pairs": evaluated_pairs,
+            "skipped_pairs": skipped_pairs,
+            "error": "Fewer than 2 valid word pairs evaluated.",
+        }
+
+    rho, p_value = spearmanr(predicted_scores, human_scores)
+
+    return {
+        "language": lang,
+        "spearman": float(rho),
+        "p_value": float(p_value),
+        "num_pairs": evaluated_pairs,
+        "skipped_pairs": skipped_pairs,
+        "mean_model_similarity": float(np.mean(predicted_scores)),
+        "mean_human_score": float(np.mean(human_scores)),
+    }
 
 def evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1='en', lang2='fr', max_samples=None):
     """
@@ -3295,6 +3377,12 @@ def main():
     parser.add_argument('--multisimlex', action='store_true', help='Run MultiSimLex evaluation')
     parser.add_argument('--languages', nargs='+', default=['en', 'fr'], help='Languages for MultiSimLex evaluation')
     parser.add_argument('--cross_lingual', action='store_true', help='Run cross-lingual MultiSimLex evaluation')
+    parser.add_argument(
+    "--multisimlex_dir",
+    type=str,
+    default="data/multisimlex",
+    help="Directory containing Multi-SimLex translation.csv and scores.csv",
+)
     
     args = parser.parse_args()
     
@@ -3403,10 +3491,14 @@ def main():
         print("="*60)
         
         results = {}
-        for lang in args.languages:
-            result = evaluate_multisimlex(model, tokenizer, device, language=lang)
-            if result:
-                results[lang] = result
+        results = evaluate_multisimlex(
+            model,
+            tokenizer,
+            device,
+            language=language,
+            max_samples=args.max_samples,
+            data_dir=args.multisimlex_dir,
+        )
         
         # Cross-lingual evaluation
         if args.cross_lingual and len(args.languages) >= 2:
