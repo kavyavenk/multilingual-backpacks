@@ -3491,16 +3491,22 @@ def main():
         print("\n" + "="*60)
         print("MultiSimLex Benchmark Evaluation")
         print("="*60)
-        
+
         results = {}
-        results = evaluate_multisimlex(
-            model,
-            tokenizer,
-            device,
-            language=lang,
-            max_samples=args.max_samples,
-            data_dir=args.multisimlex_dir,
-        )
+
+        for lang in args.languages:
+            print(f"\nRunning MultiSimLex for language: {lang}")
+
+            results[lang] = evaluate_multisimlex(
+                model,
+                tokenizer,
+                device,
+                language=lang,
+                max_samples=args.max_samples,
+                data_dir=args.multisimlex_dir,
+            )
+
+            print(results[lang])
         
         # Cross-lingual evaluation
         if args.cross_lingual and len(args.languages) >= 2:
