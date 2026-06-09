@@ -14,6 +14,8 @@ from model import BackpackLM, StandardTransformerLM
 from configurator import ModelConfig
 
 
+SENSE_LABELS = {i: f"Sense {i}" for i in range(64)}
+
 def load_huggingface_model(model_name, device):
     """
     Load a HuggingFace Backpack model (e.g., stanfordnlp/backpack-gpt2).
@@ -3495,7 +3497,7 @@ def main():
             model,
             tokenizer,
             device,
-            language=language,
+            language=lang,
             max_samples=args.max_samples,
             data_dir=args.multisimlex_dir,
         )
