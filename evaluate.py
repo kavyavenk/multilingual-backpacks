@@ -1667,25 +1667,7 @@ def evaluate_multisimlex(
     translation_path = os.path.join(data_dir, "translation.csv")
     scores_path = os.path.join(data_dir, "scores.csv")
 
-    print("\n=== Embeddings ===")
-
-    test_pairs = [
-        ("dog", "cat"),
-        ("dog", "banana"),
-        ("dog", "democracy"),
-        ("car", "automobile"),
-    ]
-
-    for w1, w2 in test_pairs:
-        emb1 = get_word_embedding(w1)
-        emb2 = get_word_embedding(w2)
     
-        sim = cosine_similarity(
-            emb1.reshape(1, -1),
-            emb2.reshape(1, -1)
-    )[0][0]
-
-    print(f"{w1} <-> {w2}: {sim:.4f}")
 
     if not os.path.exists(translation_path):
         raise FileNotFoundError(f"Missing translation file: {translation_path}")
@@ -1782,6 +1764,27 @@ def evaluate_multisimlex(
             emb = torch.nn.functional.normalize(emb, dim=0)
         
         return emb.detach().cpu().numpy()
+
+
+    print("\n=== Embeddings ===")
+
+    test_pairs = [
+        ("dog", "cat"),
+        ("dog", "banana"),
+        ("dog", "democracy"),
+        ("car", "automobile"),
+    ]
+
+    for w1, w2 in test_pairs:
+        emb1 = get_word_embedding(w1)
+        emb2 = get_word_embedding(w2)
+    
+        sim = cosine_similarity(
+            emb1.reshape(1, -1),
+            emb2.reshape(1, -1)
+    )[0][0]
+
+    print(f"{w1} <-> {w2}: {sim:.4f}")
 
     for _, row in df.iterrows():
         word1 = row["word1"]
