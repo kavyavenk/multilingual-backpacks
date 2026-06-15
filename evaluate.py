@@ -3417,7 +3417,7 @@ def main():
                 tokenizer,
                 device,
                 language=lang,
-                max_samples=args.max_samples,
+                max_samples=None,
                 data_dir=args.multisimlex_dir,
             )
 
