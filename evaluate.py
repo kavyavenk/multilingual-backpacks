@@ -1752,7 +1752,7 @@ def evaluate_multisimlex(
             sense_vecs = model.get_sense_vectors(input_ids)
             print(sense_vecs.shape)
             emb = sense_vecs.mean(dim=(0, 1, 2))
-    return emb.detach().cpu().numpy()
+        return emb.detach().cpu().numpy()
 
     for _, row in df.iterrows():
         word1 = row["word1"]
