@@ -1756,14 +1756,14 @@ def evaluate_multisimlex(
             if hasattr(model, "get_sense_vectors"): # backpack
                 sense_vecs = model.get_sense_vectors(input_ids)
                 token_vecs = sense_vecs.mean(dim=2)
-                emb = sense_vecs.mean(dim=1).squeeze(0) # pooling emb = token_vecs.mean(dim=1).squeeze(0)
-                emb = emb - emb.mean(dim=1, keepdim=True) #pooling emb = emb - emb.mean()
-                emb = torch.nn.functional.normalize(emb, dim=1) # pooling emb = torch.nn.functional.normalize(emb, dim=0)
+                emb = token_vecs.mean(dim=1).squeeze(0)
+                
             else: # transformer
                 token_vecs = model.token_embeddings(input_ids)
                 emb = token_vecs.mean(dim=1).squeeze(0)
-                emb = emb - emb.mean()
-                emb = torch.nn.functional.normalize(emb, dim=0)
+                
+            emb = emb - emb.mean()
+            emb = torch.nn.functional.normalize(emb, dim=0)
         
         return emb.detach().cpu().numpy()
 
@@ -1795,7 +1795,10 @@ def evaluate_multisimlex(
         emb1 = get_word_embedding(w1)
         emb2 = get_word_embedding(w2)
     
-        sim = compute_similarity(emb1, emb2)
+        sim = cosine_similarity(
+            emb1.reshape(1, -1),
+            emb2.reshape(1, -1),
+        )[0][0]
 
         print(f"{w1} <-> {w2}: {sim:.4f}")
 
@@ -1812,7 +1815,10 @@ def evaluate_multisimlex(
                 skipped_pairs += 1
                 continue
 
-            sim = compute_similarity(emb1, emb2)
+            sim = cosine_similarity(
+                emb1.reshape(1, -1),
+                emb2.reshape(1, -1),
+            )[0][0]
 
             predicted_scores.append(float(sim))
             human_scores.append(float(human_score))
