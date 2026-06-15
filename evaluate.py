@@ -3400,6 +3400,44 @@ def main():
     # Load tokenizer
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
+
+ # MultiSimLex evaluation
+    if args.multisimlex:
+        print("\n" + "="*60)
+        print("MultiSimLex Benchmark Evaluation")
+        print("="*60)
+
+        results = {}
+
+        for lang in args.languages:
+            print(f"\nRunning MultiSimLex for language: {lang}")
+
+            results[lang] = evaluate_multisimlex(
+                model,
+                tokenizer,
+                device,
+                language=lang,
+                max_samples=args.max_samples,
+                data_dir=args.multisimlex_dir,
+            )
+
+            print(results[lang])
+        
+        # Cross-lingual evaluation
+        if args.cross_lingual and len(args.languages) >= 2:
+            lang1, lang2 = args.languages[0], args.languages[1]
+            cross_result = evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1, lang2)
+            if cross_result:
+                results[f'{lang1}-{lang2}'] = cross_result
+        
+        # Summary
+        if results:
+            print("\n" + "="*60)
+            print("MultiSimLex Summary")
+            print("="*60)
+            for key, result in results.items():
+                print(f"{key.upper()}: {result['correlation']:.4f} ({result['benchmark_level']})")
+    
     
     print("\n=== Word-level Evaluation ===")
     
@@ -3486,43 +3524,7 @@ def main():
         print(f"  FR: {sent2[:50]}...")
         print(f"  Similarity: {sim:.4f}\n")
     
-    # MultiSimLex evaluation
-    if args.multisimlex:
-        print("\n" + "="*60)
-        print("MultiSimLex Benchmark Evaluation")
-        print("="*60)
-
-        results = {}
-
-        for lang in args.languages:
-            print(f"\nRunning MultiSimLex for language: {lang}")
-
-            results[lang] = evaluate_multisimlex(
-                model,
-                tokenizer,
-                device,
-                language=lang,
-                max_samples=args.max_samples,
-                data_dir=args.multisimlex_dir,
-            )
-
-            print(results[lang])
-        
-        # Cross-lingual evaluation
-        if args.cross_lingual and len(args.languages) >= 2:
-            lang1, lang2 = args.languages[0], args.languages[1]
-            cross_result = evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1, lang2)
-            if cross_result:
-                results[f'{lang1}-{lang2}'] = cross_result
-        
-        # Summary
-        if results:
-            print("\n" + "="*60)
-            print("MultiSimLex Summary")
-            print("="*60)
-            for key, result in results.items():
-                print(f"{key.upper()}: {result['correlation']:.4f} ({result['benchmark_level']})")
-    
+   
     print("\nEvaluation complete!")
 
 
