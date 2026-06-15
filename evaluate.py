@@ -1747,25 +1747,11 @@ def evaluate_multisimlex(
 
         if input_ids.numel() == 0:
             return None
-
+            
         with torch.no_grad():
-            # Fallback: use model token embedding matrix.
-            if hasattr(model, "token_embedding_table"):
-                emb = model.token_embedding_table(input_ids)
-            elif hasattr(model, "transformer") and hasattr(model.transformer, "wte"):
-                emb = model.transformer.wte(input_ids)
-            elif hasattr(model, "get_input_embeddings"):
-                emb = model.get_input_embeddings()(input_ids)
-            else:
-                raise AttributeError(
-                    "Could not find token embeddings on model. "
-                    "Add the correct embedding accessor for your model class."
-                )
-
-            # Average across subword tokens.
-            emb = emb.mean(dim=1).squeeze(0)
-
-        return emb.detach().cpu().numpy()
+            sense_vecs = model.get_sense_vectors(token_ids)
+            word_vec = sense_vecs.mean(dim=(0, 1, 2))
+    return word_vec.detach().cpu().numpy()
 
     for _, row in df.iterrows():
         word1 = row["word1"]
