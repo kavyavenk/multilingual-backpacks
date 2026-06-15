@@ -1750,8 +1750,10 @@ def evaluate_multisimlex(
             
         with torch.no_grad():
             sense_vecs = model.get_sense_vectors(input_ids)
-            print(sense_vecs.shape)
-            emb = sense_vecs.mean(dim=(0, 1, 2))
+            token_vecs = sense_vecs.mean(dim=2)
+            emb = token_vecs.mean(dim=1).squeeze(0)
+            emb = emb - emb.mean()
+            emb = torch.nn.functional.normalize(emb, dim=0)
         return emb.detach().cpu().numpy()
 
     for _, row in df.iterrows():
