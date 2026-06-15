@@ -1785,7 +1785,7 @@ def evaluate_multisimlex(
             emb2.reshape(1, -1)
     )[0][0]
 
-    print(f"{w1} <-> {w2}: {sim:.4f}")
+        print(f"{w1} <-> {w2}: {sim:.4f}")
 
     for _, row in df.iterrows():
         word1 = row["word1"]
