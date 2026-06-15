@@ -1769,10 +1769,11 @@ def evaluate_multisimlex(
     print("\n=== Embeddings ===")
 
     test_pairs = [
-        ("dog", "cat"),
-        ("dog", "banana"),
-        ("dog", "democracy"),
-        ("car", "automobile"),
+    ("car", "automobile"),
+    ("car", "banana"),
+    ("car", "democracy"),
+    ("dog", "cat"),
+    ("dog", "banana"),
     ]
 
     for w1, w2 in test_pairs:
