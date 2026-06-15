@@ -3438,7 +3438,7 @@ def main():
             print("MultiSimLex Summary")
             print("="*60)
             for key, result in results.items():
-                print(f"{key.upper()}: {result['correlation']:.4f} ({result['benchmark_level']})")
+                print(f"{key.upper()}: {result['spearman']:.4f} ({result['benchmark_level']})")
     
     
     print("\n=== Word-level Evaluation ===")
