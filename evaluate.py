@@ -3437,6 +3437,47 @@ def main():
                 else:
                     print(f"{key.upper()}: {result['spearman']:.4f}")
     
+    print("\n=== Embeddings ===")
+
+    test_pairs = [
+        ("dog", "cat"),
+        ("dog", "banana"),
+        ("dog", "democracy"),
+        ("car", "automobile"),
+    ]
+
+    for w1, w2 in test_pairs:
+        emb1 = get_word_embedding(w1)
+        emb2 = get_word_embedding(w2)
+    
+        sim = cosine_similarity(
+            emb1.reshape(1, -1),
+            emb2.reshape(1, -1)
+    )[0][0]
+
+    print(f"{w1} <-> {w2}: {sim:.4f}")
+    
+    print("\n=== Sense Diversity Check ===")
+
+    word = "bank"
+    
+    token_id = tokenizer(
+        word,
+        return_tensors="pt",
+        add_special_tokens=False
+    )["input_ids"].to(device)
+    
+    sense_vecs = model.get_sense_vectors(token_id)
+    sense_vecs = sense_vecs.squeeze(0).squeeze(0)
+    
+    for i in range(3):
+        for j in range(i+1, 3):
+            sim = F.cosine_similarity(
+                sense_vecs[i].unsqueeze(0),
+                sense_vecs[j].unsqueeze(0)
+            ).item()
+
+            print(f"sense {i} vs {j}: {sim:.4f}")
     
     print("\n=== Word-level Evaluation ===")
     
