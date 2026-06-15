@@ -1789,8 +1789,10 @@ def evaluate_multisimlex(
             human_scores.append(float(human_score))
             evaluated_pairs += 1
 
-        except Exception:
+        except Exception as e:
             skipped_pairs += 1
+            if skipped_pairs <= 10:
+                print(f"skipping {word1}, {word2}: {repr(e)}")
             continue
 
     if len(predicted_scores) < 2:
