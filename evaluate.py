@@ -1754,17 +1754,8 @@ def evaluate_multisimlex(
                 token_vecs = sense_vecs.mean(dim=2)
                 emb = token_vecs.mean(dim=1).squeeze(0)
             else: # transformer
-                if hasattr(model, "token_embedding_table"):
-                    token_vecs = model.token_embedding_table(input_ids)
-                elif hasattr(model, "wte"):
-                    token_vecs = model.wte(input_ids)
-                elif hasattr(model, "transformer") and hasattr(model.transformer, "wte"):
-                    token_vecs = model.transformer.wte(input_ids)
-                else:
-                    raise AttributeError("Could not find transformer token embeddings")
-
+                token_vecs = model.token_embeddings(input_ids)
                 emb = token_vecs.mean(dim=1).squeeze(0)
-
             emb = emb - emb.mean()
             emb = torch.nn.functional.normalize(emb, dim=0)
         
