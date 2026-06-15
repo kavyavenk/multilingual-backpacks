@@ -26,20 +26,15 @@ def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
     
     # Try to load Europarl dataset
     try:
-        # Option 1: Try loading from HuggingFace datasets
-        dataset = load_dataset("europarl_bilingual", language_pair, split="train")
+        dataset = load_dataset("Helsinki-NLP/europarl", language_pair, split="train")
         print(f"Loaded Europarl {language_pair} from HuggingFace")
-    except:
-        # Option 2: Try OPUS dataset which includes Europarl
+    except Exception as e:
+        print("Europarl load failed:", repr(e))
         try:
             dataset = load_dataset("opus100", language_pair, split="train")
-            print(f"Using OPUS100 {language_pair} dataset (includes Europarl)")
-        except:
-            print("ERROR: Could not load Europarl or OPUS dataset.")
-            print("Please install datasets and try again:")
-            print("  pip install datasets")
-            print("\nAlternatively, you can download Europarl manually from:")
-            print("  https://www.statmt.org/europarl/")
+            print(f"Using OPUS100 {language_pair} dataset")
+        except Exception as e2:
+            print("OPUS100 load failed:", repr(e2))
             return
     
     # Limit dataset size for faster processing
