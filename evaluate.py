@@ -1749,11 +1749,25 @@ def evaluate_multisimlex(
             return None
             
         with torch.no_grad():
-            sense_vecs = model.get_sense_vectors(input_ids)
-            token_vecs = sense_vecs.mean(dim=2)
-            emb = token_vecs.mean(dim=1).squeeze(0)
+            if hasattr(model, "get_sense_vectors"): # backpack
+                sense_vecs = model.get_sense_vectors(input_ids)
+                token_vecs = sense_vecs.mean(dim=2)
+                emb = token_vecs.mean(dim=1).squeeze(0)
+            else: # transformer
+                if hasattr(model, "token_embedding_table"):
+                    token_vecs = model.token_embedding_table(input_ids)
+                elif hasattr(model, "wte"):
+                    token_vecs = model.wte(input_ids)
+                elif hasattr(model, "transformer") and hasattr(model.transformer, "wte"):
+                    token_vecs = model.transformer.wte(input_ids)
+                else:
+                    raise AttributeError("Could not find transformer token embeddings")
+
+                emb = token_vecs.mean(dim=1).squeeze(0)
+
             emb = emb - emb.mean()
             emb = torch.nn.functional.normalize(emb, dim=0)
+        
         return emb.detach().cpu().numpy()
 
     for _, row in df.iterrows():
