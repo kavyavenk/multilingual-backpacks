@@ -1749,7 +1749,7 @@ def evaluate_multisimlex(
             return None
             
         with torch.no_grad():
-            sense_vecs = model.get_sense_vectors(token_ids)
+            sense_vecs = model.get_sense_vectors(input_ids)
             print(sense_vecs.shape)
             emb = sense_vecs.mean(dim=(0, 1, 2))
     return emb.detach().cpu().numpy()
