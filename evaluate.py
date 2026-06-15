@@ -1750,8 +1750,9 @@ def evaluate_multisimlex(
             
         with torch.no_grad():
             sense_vecs = model.get_sense_vectors(token_ids)
-            word_vec = sense_vecs.mean(dim=(0, 1, 2))
-    return word_vec.detach().cpu().numpy()
+            print(sense_vecs.shape)
+            emb = sense_vecs.mean(dim=(0, 1, 2))
+    return emb.detach().cpu().numpy()
 
     for _, row in df.iterrows():
         word1 = row["word1"]
@@ -3424,7 +3425,10 @@ def main():
             print("MultiSimLex Summary")
             print("="*60)
             for key, result in results.items():
-                print(f"{key.upper()}: {result['spearman']:.4f} ({result['benchmark_level']})")
+                if result.get("spearman") is None:
+                    print(f"{key.upper()}: failed ({result.get('error')})")
+                else:
+                    print(f"{key.upper()}: {result['spearman']:.4f}")
     
     
     print("\n=== Word-level Evaluation ===")
