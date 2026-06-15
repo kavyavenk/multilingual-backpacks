@@ -1660,10 +1660,32 @@ def evaluate_multisimlex(
         "fra": "FRA",
     }
 
+
+    
     lang = lang_map.get(language.lower(), language.upper())
 
     translation_path = os.path.join(data_dir, "translation.csv")
     scores_path = os.path.join(data_dir, "scores.csv")
+
+    print("\n=== Embeddings ===")
+
+    test_pairs = [
+        ("dog", "cat"),
+        ("dog", "banana"),
+        ("dog", "democracy"),
+        ("car", "automobile"),
+    ]
+
+    for w1, w2 in test_pairs:
+        emb1 = get_word_embedding(w1)
+        emb2 = get_word_embedding(w2)
+    
+        sim = cosine_similarity(
+            emb1.reshape(1, -1),
+            emb2.reshape(1, -1)
+    )[0][0]
+
+    print(f"{w1} <-> {w2}: {sim:.4f}")
 
     if not os.path.exists(translation_path):
         raise FileNotFoundError(f"Missing translation file: {translation_path}")
@@ -3437,25 +3459,7 @@ def main():
                 else:
                     print(f"{key.upper()}: {result['spearman']:.4f}")
     
-    print("\n=== Embeddings ===")
 
-    test_pairs = [
-        ("dog", "cat"),
-        ("dog", "banana"),
-        ("dog", "democracy"),
-        ("car", "automobile"),
-    ]
-
-    for w1, w2 in test_pairs:
-        emb1 = get_word_embedding(w1)
-        emb2 = get_word_embedding(w2)
-    
-        sim = cosine_similarity(
-            emb1.reshape(1, -1),
-            emb2.reshape(1, -1)
-    )[0][0]
-
-    print(f"{w1} <-> {w2}: {sim:.4f}")
     
     print("\n=== Sense Diversity Check ===")
 
