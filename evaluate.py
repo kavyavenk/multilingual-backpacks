@@ -2325,7 +2325,6 @@ def load_test_data(data_dir='data/europarl', language_pair='en-fr', max_samples=
         except Exception as e:
             print(f"Error loading dataset: {e}")
             # Try loading from segregated files if available
-            ----
             # Try simple aligned text files: en.txt and fr.txt
             en_file = os.path.join(data_dir, f"{lang1}.txt")
             fr_file = os.path.join(data_dir, f"{lang2}.txt")
