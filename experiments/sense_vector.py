@@ -162,6 +162,78 @@ class SenseVectorExperiment:
             }
         
         return results
+    def sweep_ablate_senses(self, prompt, target_word, test_words):
+        old_forward = self.model.get_sense_vectors
+    
+        prompt_ids = self.tokenizer.encode(prompt, add_special_tokens=False)
+        target_ids = self.tokenizer.encode(target_word, add_special_tokens=False)
+        test_ids = [
+            self.tokenizer.encode(w, add_special_tokens=False)[0]
+            for w in test_words
+        ]
+    
+        # infer number of senses
+        dummy = torch.tensor([[target_ids[0]]], dtype=torch.long, device=self.device)
+        n_senses = old_forward(dummy).shape[2]
+    
+        def run_once(ablate_idx=None):
+            def patched_get_sense_vectors(x):
+                sense_vecs = old_forward(x)
+    
+                if ablate_idx is not None:
+                    mask = torch.zeros_like(x, dtype=torch.bool)
+                    for tok_id in target_ids:
+                        mask |= (x == tok_id)
+    
+                    if mask.any():
+                        print("sense_vecs shape:", sense_vecs.shape)
+                        print("mask shape:", mask.shape)
+                        positions = mask.nonzero(as_tuple=False)
+                        for b, pos in positions:
+                            sense_vecs[b, pos, ablate_idx, :] = 0.0
+    
+                return sense_vecs
+    
+            self.model.get_sense_vectors = patched_get_sense_vectors
+    
+            input_ids = torch.tensor([prompt_ids], dtype=torch.long, device=self.device)
+    
+            with torch.no_grad():
+                logits = self.model(input_ids)[0]
+                probs = F.softmax(logits[0, -1, :], dim=-1)
+    
+            return {
+                w: float(probs[tok_id].detach().cpu())
+                for w, tok_id in zip(test_words, test_ids)
+            }
+    
+        try:
+            baseline = run_once(ablate_idx=None)
+    
+            results = []
+            for sense_idx in range(n_senses):
+                ablated = run_once(ablate_idx=sense_idx)
+    
+                diff = {
+                    w: ablated[w] - baseline[w]
+                    for w in test_words
+                }
+    
+                total_abs_change = sum(abs(v) for v in diff.values())
+    
+                results.append({
+                    "sense": sense_idx,
+                    "baseline": baseline,
+                    "ablated": ablated,
+                    "diff": diff,
+                    "total_abs_change": total_abs_change,
+                })
+    
+        finally:
+            self.model.get_sense_vectors = old_forward
+    
+        results = sorted(results, key=lambda x: x["total_abs_change"], reverse=True)
+        return baseline, results
 
 
 def load_model(out_dir, device):
@@ -180,6 +252,8 @@ def load_model(out_dir, device):
     model.eval()
 
     return model, config
+
+
 
 
 def main():
@@ -254,6 +328,24 @@ def main():
         for sense_idx, preds in enumerate(results['fr']):
             print(f"    Sense {sense_idx}: {preds}")
 
+    print("\n=== Sweep Sense Ablation ===")
+
+    baseline, results = ex.sweep_ablate_senses(
+        prompt="bonjour",
+        target_word="bonjour",
+        test_words=["language", " model"]
+    )
+    
+    print("BASELINE:", baseline)
+    
+    for r in results[:10]:
+        print("=" * 60)
+        print("sense:", r["sense"])
+        print("total_abs_change:", r["total_abs_change"])
+        print("ablated:", r["ablated"])
+        print("diff:", r["diff"])
+
+    
 
 if __name__ == '__main__':
     main()
