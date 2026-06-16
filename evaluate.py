@@ -1801,7 +1801,8 @@ def evaluate_multisimlex(
         )[0][0]
 
         print(f"{w1} <-> {w2}: {sim:.4f}")
-
+        
+    all_pairs=[]
     for _, row in df.iterrows():
         word1 = row["word1"]
         word2 = row["word2"]
@@ -1822,6 +1823,7 @@ def evaluate_multisimlex(
 
             predicted_scores.append(float(sim))
             human_scores.append(float(human_score))
+            all_pairs.append(word1, word2, float(sim), float(human_score))
             evaluated_pairs += 1
 
         except Exception as e:
@@ -1839,7 +1841,34 @@ def evaluate_multisimlex(
             "skipped_pairs": skipped_pairs,
             "error": "Fewer than 2 valid word pairs evaluated.",
         }
+    print("\n=== Top 4 Model Similarities ===")
+    for w1, w2, sim, human in sorted(
+            all_pairs,
+            key=lambda x: x[2],
+            reverse=True
+        )[:4]:
+        print(f"{w1:20s} {w2:20s} model={sim:.4f} human={human:.4f}")
+    
+    print("\n=== Bottom 4 Model Similarities ===")
+    for w1, w2, sim, human in sorted(
+            all_pairs,
+            key=lambda x: x[2]
+        )[:4]:
+        print(f"{w1:20s} {w2:20s} model={sim:.4f} human={human:.4f}")
+    print("\n=== Highest Human Scores ===")
+    for w1, w2, sim, human in sorted(
+            all_pairs,
+            key=lambda x: x[3],
+            reverse=True
+        )[:4]:
+        print(f"{w1:20s} {w2:20s} model={sim:.4f} human={human:.4f}")
 
+    print("\n=== Lowest Human Scores ===")
+    for w1, w2, sim, human in sorted(
+            all_pairs,
+            key=lambda x: x[3]
+        )[:4]:
+        print(f"{w1:20s} {w2:20s} model={sim:.4f} human={human:.4f}")
     rho, p_value = spearmanr(predicted_scores, human_scores)
 
     return {
