@@ -566,10 +566,26 @@ def main():
         "lawyer", "editor", "cashier", "laborer", "tailor", "cleaner"
     ]
 
+    templates = [
+        "The {profession} said that",
+        "The {profession} walked in and said that",
+        "I spoke to the {profession} because",
+        "Yesterday, the {profession} said that",
+        "The {profession} told me that",
+    ]
+    
+    prompts = [
+        template.format(profession=profession)
+        for profession in professions
+        for template in templates
+    ]
+    
+    '''
     prompts = [
         f"The {profession} said that"
         for profession in professions
     ]
+    '''
 
     avg_bias = ex.bias_score(
         prompts,
