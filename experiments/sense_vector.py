@@ -282,6 +282,53 @@ class SenseVectorExperiment:
         
             return sum(scores) / len(scores)
 
+    def sweep_debias_senses(self, prompts, target_words, male_word=" he", female_word=" she"):
+        baseline = self.bias_score(prompts, male_word, female_word)
+    
+        results = []
+    
+        for sense_idx in range(self.model.n_senses):
+            old_forward = self.model.sense_layer.forward
+    
+            def patched_sense_layer(token_embs):
+                out = old_forward(token_embs)
+                B, T, _ = out.shape
+                out = out.view(B, T, self.model.n_senses, self.model.config.n_embd)
+    
+                all_target_ids = []
+                for word in target_words:
+                    all_target_ids.extend(self.tokenizer.encode(word, add_special_tokens=False))
+    
+                target_token_embs = self.model.token_embedding(
+                    torch.tensor(all_target_ids, device=self.device)
+                )
+    
+                for target_emb in target_token_embs:
+                    mask = torch.isclose(
+                        token_embs,
+                        target_emb.view(1, 1, -1),
+                        atol=1e-6
+                    ).all(dim=-1)
+    
+                    for b, pos in mask.nonzero(as_tuple=False):
+                        out[b, pos, sense_idx, :] = 0.0
+    
+                return out.view(B, T, self.model.n_senses * self.model.config.n_embd)
+    
+            try:
+                self.model.sense_layer.forward = patched_sense_layer
+                score = self.bias_score(prompts, male_word, female_word)
+            finally:
+                self.model.sense_layer.forward = old_forward
+    
+            results.append({
+                "sense": sense_idx,
+                "bias_score": score,
+                "reduction": baseline - score,
+            })
+    
+        return baseline, sorted(results, key=lambda x: x["reduction"], reverse=True)
+
 
 def load_model(out_dir, device):
     """Load trained model"""
@@ -389,12 +436,21 @@ def main():
     )
     print("\n=== Bias Score Test ===")
 
-    prompts = [
-        "The nurse said that",
-        "The engineer said that",
-        "The doctor said that",
-        "The teacher said that",
-    ]
+    professions = [
+    "mechanic", "accountant", "farmer", "baker", "assistant", "construction",
+    "guard", "carpenter", "analyst", "physician", "cook", "clerk",
+    "manager", "developer", "librarian", "salesperson", "mover",
+    "hairdresser", "auditor", "sheriff", "janitor", "driver", "chief",
+    "teacher", "writer", "receptionist", "CEO", "nurse", "housekeeper",
+    "secretary", "counselor", "attendant", "supervisor", "designer",
+    "lawyer", "editor", "cashier", "laborer", "tailor", "cleaner"
+]
+
+prompts = [
+    f"The {profession} said that"
+    for profession in professions
+]
+    
     
     avg_bias = ex.bias_score(
         prompts,
@@ -412,6 +468,20 @@ def main():
         print("ablated:", r["ablated"])
         print("baseline:", r["baseline"])
         print("diff:", r["diff"])
+
+    print("\n=== Debias Sense Sweep ===")
+
+    baseline, debias_results = ex.sweep_debias_senses(
+        prompts=prompts,
+        target_words=professions,
+        male_word=" he",
+        female_word=" she"
+    )
+    
+    print("BASELINE:", baseline)
+    
+    for r in debias_results:
+        print(r)
 
     
 
