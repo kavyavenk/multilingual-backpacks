@@ -85,6 +85,17 @@ def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
     output_dir = os.path.dirname(__file__)
     train_filename = os.path.join(output_dir, 'train.bin')
     val_filename = os.path.join(output_dir, 'val.bin')
+    raw_val_path_en = os.path.join(output_dir, "en.txt")
+    raw_val_path_fr = os.path.join(output_dir, "fr.txt")
+    
+    with open(raw_val_path_en, "w", encoding="utf-8") as f_en, \
+         open(raw_val_path_fr, "w", encoding="utf-8") as f_fr:
+        for en, fr in val_pairs:
+            f_en.write(en.strip().replace("\n", " ") + "\n")
+            f_fr.write(fr.strip().replace("\n", " ") + "\n")
+    
+    print(f"Saved raw validation EN to {raw_val_path_en}")
+    print(f"Saved raw validation FR to {raw_val_path_fr}")
     
     # Process in batches for efficiency
     batch_size = 1000
