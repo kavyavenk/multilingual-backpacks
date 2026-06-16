@@ -1823,7 +1823,7 @@ def evaluate_multisimlex(
 
             predicted_scores.append(float(sim))
             human_scores.append(float(human_score))
-            all_pairs.append(word1, word2, float(sim), float(human_score))
+            all_pairs.append((word1, word2, float(sim), float(human_score)))
             evaluated_pairs += 1
 
         except Exception as e:
