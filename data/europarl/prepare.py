@@ -90,7 +90,7 @@ def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
     
     with open(raw_val_path_en, "w", encoding="utf-8") as f_en, \
          open(raw_val_path_fr, "w", encoding="utf-8") as f_fr:
-        for en, fr in val_pairs:
+        for en, fr in [en, fr]:
             f_en.write(en.strip().replace("\n", " ") + "\n")
             f_fr.write(fr.strip().replace("\n", " ") + "\n")
             print("Saved .txt files")
