@@ -163,43 +163,58 @@ class SenseVectorExperiment:
         
         return results
     def sweep_ablate_senses(self, prompt, target_word, test_words):
-        old_forward = self.model.get_sense_vectors
+        old_forward = self.model.sense_layer.forward
     
         prompt_ids = self.tokenizer.encode(prompt, add_special_tokens=False)
         target_ids = self.tokenizer.encode(target_word, add_special_tokens=False)
+        print("prompt ids:", prompt_ids)
+        print("target ids:", target_ids)
+        print("decoded prompt tokens:",
+              [self.tokenizer.decode([i]) for i in prompt_ids])
+        
         test_ids = [
             self.tokenizer.encode(w, add_special_tokens=False)[0]
             for w in test_words
         ]
     
-        # infer number of senses
-        dummy = torch.tensor([[target_ids[0]]], dtype=torch.long, device=self.device)
-        n_senses = old_forward(dummy).shape[2]
+        n_senses = self.model.n_senses
+        n_embd = self.model.config.n_embd
     
         def run_once(ablate_idx=None):
-            def patched_get_sense_vectors(x):
-                sense_vecs = old_forward(x)
+            def patched_sense_layer(token_embs):
+                out = old_forward(token_embs)
+                B, T, _ = out.shape
+                out = out.view(B, T, n_senses, n_embd)
     
                 if ablate_idx is not None:
-                    mask = torch.zeros_like(x, dtype=torch.bool)
-                    for tok_id in target_ids:
-                        mask |= (x == tok_id)
+                    # identify which token embeddings correspond to target ids
+                    target_token_embs = self.model.token_embedding(
+                        torch.tensor(target_ids, device=self.device)
+                    )
     
-                    if mask.any():
-                        print("sense_vecs shape:", sense_vecs.shape)
-                        print("mask shape:", mask.shape)
+                    for target_emb in target_token_embs:
+                        mask = torch.isclose(
+                            token_embs, target_emb.view(1, 1, -1),
+                            atol=1e-6
+                        ).all(dim=-1)
+    
                         positions = mask.nonzero(as_tuple=False)
+                        print(
+                            f"ablate_idx={ablate_idx}, "
+                            f"matches={len(positions)}"
+                        )
+                        
                         for b, pos in positions:
-                            sense_vecs[b, pos, ablate_idx, :] = 0.0
+                            out[b, pos, ablate_idx, :] = 0.0
     
-                return sense_vecs
+                return out.view(B, T, n_senses * n_embd)
     
-            self.model.get_sense_vectors = patched_get_sense_vectors
+            self.model.sense_layer.forward = patched_sense_layer
     
             input_ids = torch.tensor([prompt_ids], dtype=torch.long, device=self.device)
     
             with torch.no_grad():
-                logits = self.model(input_ids)[0]
+                logits, _ = self.model(input_ids)
                 probs = F.softmax(logits[0, -1, :], dim=-1)
     
             return {
@@ -230,10 +245,9 @@ class SenseVectorExperiment:
                 })
     
         finally:
-            self.model.get_sense_vectors = old_forward
+            self.model.sense_layer.forward = old_forward
     
-        results = sorted(results, key=lambda x: x["total_abs_change"], reverse=True)
-        return baseline, results
+        return sorted(results, key=lambda x: x["total_abs_change"], reverse=True)
 
 
 def load_model(out_dir, device):
@@ -330,19 +344,24 @@ def main():
 
     print("\n=== Sweep Sense Ablation ===")
 
-    baseline, results = ex.sweep_ablate_senses(
+    results = ex.sweep_ablate_senses(
         prompt="bonjour",
         target_word="bonjour",
-        test_words=["language", " model"]
+        test_words=[
+            "bonjour",
+            "monde",
+            "langue",
+            "modèle"
+        ]
     )
     
-    print("BASELINE:", baseline)
     
     for r in results[:10]:
         print("=" * 60)
         print("sense:", r["sense"])
         print("total_abs_change:", r["total_abs_change"])
         print("ablated:", r["ablated"])
+        print("baseline:", r["baseline"])
         print("diff:", r["diff"])
 
     
