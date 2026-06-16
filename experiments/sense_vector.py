@@ -324,10 +324,65 @@ class SenseVectorExperiment:
             results.append({
                 "sense": sense_idx,
                 "bias_score": score,
-                "reduction": baseline - score,
+                "reduction": baseline - score
             })
     
         return baseline, sorted(results, key=lambda x: x["reduction"], reverse=True)
+
+    def per_profession_debias_sense(self, professions, sense_idx=11, male_word=" he", female_word=" she"):
+        rows = []
+    
+        for profession in professions:
+            prompt = f"The {profession} said that"
+    
+            baseline = self.bias_score(
+                [prompt],
+                male_word=male_word,
+                female_word=female_word
+            )
+    
+            old_forward = self.model.sense_layer.forward
+            target_ids = self.tokenizer.encode(profession, add_special_tokens=False)
+    
+            def patched_sense_layer(token_embs):
+                out = old_forward(token_embs)
+                B, T, _ = out.shape
+                out = out.view(B, T, self.model.n_senses, self.model.config.n_embd)
+    
+                target_token_embs = self.model.token_embedding(
+                    torch.tensor(target_ids, device=self.device)
+                )
+    
+                for target_emb in target_token_embs:
+                    mask = torch.isclose(
+                        token_embs,
+                        target_emb.view(1, 1, -1),
+                        atol=1e-6
+                    ).all(dim=-1)
+    
+                    for b, pos in mask.nonzero(as_tuple=False):
+                        out[b, pos, sense_idx, :] = 0.0
+    
+                return out.view(B, T, self.model.n_senses * self.model.config.n_embd)
+
+            try:
+                self.model.sense_layer.forward = patched_sense_layer
+                ablated = self.bias_score(
+                    [prompt],
+                    male_word=male_word,
+                    female_word=female_word,
+                )
+            finally:
+                self.model.sense_layer.forward = old_forward
+    
+            rows.append({
+                "profession": profession,
+                "baseline": baseline,
+                "ablated_sense_11": ablated,
+                "reduction": baseline - ablated,
+            })
+    
+        return sorted(rows, key=lambda x: x["reduction"], reverse=True)
 
 
 def load_model(out_dir, device):
@@ -481,6 +536,17 @@ def main():
     
     for r in debias_results:
         print(r)
+    print("\n=== Per-Profession Sense 11 Debias ===")
+
+    rows = ex.per_profession_debias_sense(
+        professions=professions,
+        sense_idx=11,
+        male_word=" he",
+        female_word=" she"
+    )
+    
+    for row in rows:
+        print(row)
 
     
 
