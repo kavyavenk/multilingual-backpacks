@@ -310,6 +310,42 @@ class BackpackLM(nn.Module):
 
         return x
 
+
+    def get_backpack_mixed_embeddings(self, idx, chunk_size=32):
+        B, T = idx.size()
+    
+        token_embs = self.token_embedding(idx)
+    
+        pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
+        pos_emb = self.pos_embeddings(pos)
+    
+        att_weights = self.sense_attention(token_embs + pos_emb.unsqueeze(0))
+    
+        x_chunks = []
+    
+        for start in range(0, T, chunk_size):
+            end = min(start + chunk_size, T)
+    
+            att_chunk = att_weights[:, :, start:end, :end]
+    
+            sense_embs_all = self.sense_layer(token_embs[:, :end, :])
+            sense_embs_all = sense_embs_all.view(
+                B, end, self.n_senses, self.config.n_embd
+            )
+            sense_embs_all = sense_embs_all.permute(0, 2, 1, 3)
+    
+            weighted_senses = torch.matmul(att_chunk, sense_embs_all)
+            x_chunk = weighted_senses.sum(dim=1)
+            x_chunks.append(x_chunk)
+    
+        x = torch.cat(x_chunks, dim=1)
+    
+        # add position/dropout exactly like forward
+        x = x + pos_emb.unsqueeze(0)
+        x = self.drop(x)
+    
+        return x
+
     
     def get_sense_vectors(self, idx):
         """Extract sense vectors for given token indices"""
