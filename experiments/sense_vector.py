@@ -8,7 +8,7 @@ import os
 import argparse
 import torch
 import torch.nn.functional as F
-from model import BackpackLM
+from model import BackpackLM, StandardTransformerLM
 from transformers import AutoTokenizer, AutoModelForCausalLM 
 
 
@@ -386,17 +386,22 @@ class SenseVectorExperiment:
 
 
 def load_model(out_dir, device):
-    """Load trained model"""
-    import pickle
     ckpt_path = os.path.join(out_dir, 'ckpt.pt')
-    if not os.path.exists(ckpt_path):
-        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
-    
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
     config = checkpoint['config']
-    
-    model = BackpackLM(config)
-    model.load_state_dict(checkpoint['model'])
+    state = checkpoint['model']
+
+    model_type = getattr(config, "model_type", None)
+    print("model_type:", model_type)
+
+    if model_type == "backpack" or any(k.startswith("sense_layer") for k in state.keys()):
+        print("Detected BackpackLM")
+        model = BackpackLM(config)
+    else:
+        print("Detected StandardTransformerLM")
+        model = StandardTransformerLM(config)
+
+    model.load_state_dict(state)
     model.to(device)
     model.eval()
 
@@ -440,7 +445,7 @@ def main():
     
     # Initialize experiment
     ex = SenseVectorExperiment(model, tokenizer, device)
-    
+    '''
     # Test words
     print("\n=== English Word Sense Analysis ===")
     english_words = [' hello', ' world', ' language', ' model', ' learning']
@@ -489,6 +494,7 @@ def main():
             "modèle"
         ]
     )
+    '''
     print("\n=== Bias Score Test ===")
 
     professions = [
@@ -522,7 +528,7 @@ def main():
         print("ablated:", r["ablated"])
         print("baseline:", r["baseline"])
         print("diff:", r["diff"])
-
+    '''
     print("\n=== Debias Sense Sweep ===")
 
     baseline, debias_results = ex.sweep_debias_senses(
@@ -547,7 +553,7 @@ def main():
     
     for row in rows:
         print(row)
-
+    '''
     
 
 if __name__ == '__main__':
