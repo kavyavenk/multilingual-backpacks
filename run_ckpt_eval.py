@@ -37,6 +37,13 @@ def eval_model(name, path, device, data_dir):
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
 
+    results = {
+    "model_name": name,
+    "model_path": path,
+    "device": device,
+    "parameters": params,
+    "sense_weighting": getattr(model, "sense_weighting", None),
+    }
 
     print("\nSentence similarity (translation vs random)...")
     sent = evaluate_sentence_similarity_baseline(
