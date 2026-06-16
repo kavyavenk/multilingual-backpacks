@@ -174,8 +174,14 @@ def load_model(out_dir_or_file, device):
         print("Loading StandardTransformerLM model...")
         model = StandardTransformerLM(config)
     else:
-        print("Loading BackpackLM model...")
-        model = BackpackLM(config)
+        if any('sense_predictor' in k for k in state_dict_keys):
+            sense_weighting = 'predictor'
+        elif any('sense_attention' in k for k in state_dict_keys):
+            sense_weighting = 'attention'
+        else:
+            sense_weighting = getattr(config, 'sense_weighting', 'attention')
+        print(f"Loading BackpackLM model (sense_weighting={sense_weighting})...")
+        model = BackpackLM(config, sense_weighting=sense_weighting)
     
     model.load_state_dict(checkpoint['model'])
     model.to(device)
@@ -1821,51 +1827,33 @@ def evaluate_multisimlex(
     ]
 
     for w1, w2 in test_pairs:
-        emb1 = word_to_emb.get(word1)
-        emb2 = word_to_emb.get(word2)
-        
+        emb1 = word_to_emb.get(w1)
+        emb2 = word_to_emb.get(w2)
         if emb1 is None or emb2 is None:
-            skipped_pairs += 1
             continue
-        
         emb1 = center_and_normalize(emb1)
         emb2 = center_and_normalize(emb2)
-    
         sim = cosine_similarity(
             emb1.reshape(1, -1),
             emb2.reshape(1, -1),
         )[0][0]
-
         print(f"{w1} <-> {w2}: {sim:.4f}")
 
-
-    unique_words = sorted(set(df["word1"].tolist() + df["word2"].tolist()))
-
-    word_to_emb = {}
-    for w in unique_words:
-        word_to_emb[w] = get_word_embedding(w)
-    
-    valid_embs = np.stack([v for v in word_to_emb.values() if v is not None])
-    global_mean = valid_embs.mean(axis=0)
-    print("Applying global centering")
-    
-    def normalize_after_global_center(v):
-        v = v - global_mean
-        return v / (np.linalg.norm(v) + 1e-8)
-    
-    all_pairs=[]
+    all_pairs = []
     for _, row in df.iterrows():
         word1 = row["word1"]
         word2 = row["word2"]
         human_score = row["human_score"]
 
         try:
-            emb1 = normalize_after_global_center(word_to_emb[word1])
-            emb2 = normalize_after_global_center(word_to_emb[word2])
-
-            if emb1 is None or emb2 is None:
+            raw1 = word_to_emb.get(word1)
+            raw2 = word_to_emb.get(word2)
+            if raw1 is None or raw2 is None:
                 skipped_pairs += 1
                 continue
+
+            emb1 = center_and_normalize(raw1)
+            emb2 = center_and_normalize(raw2)
 
             sim = cosine_similarity(
                 emb1.reshape(1, -1),

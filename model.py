@@ -135,7 +135,7 @@ class BackpackLM(nn.Module):
     is represented as a weighted sum of sense vectors.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, sense_weighting=None):
         super().__init__()
         assert config.vocab_size is not None
         assert config.block_size is not None
@@ -143,8 +143,7 @@ class BackpackLM(nn.Module):
 
         # Sense vectors: each word has n_senses sense vectors
         self.n_senses = getattr(config, 'n_senses', 16)
-        #self.sense_embeddings = nn.Embedding(config.vocab_size, config.n_embd * self.n_senses)
-
+        self.sense_weighting = sense_weighting or getattr(config, 'sense_weighting', 'attention')
 
         self.token_embedding = nn.Embedding(config.vocab_size, config.n_embd)
 
@@ -154,9 +153,14 @@ class BackpackLM(nn.Module):
             nn.Linear(config.n_embd, config.n_embd * self.n_senses)
         )
 
-
-        # Use transformer attention to produce sense weights
-        self.sense_attention = LMContextualizationAttention(config, self.n_senses)
+        if self.sense_weighting == 'predictor':
+            self.sense_predictor = nn.Sequential(
+                nn.Linear(config.n_embd, config.n_embd),
+                nn.GELU(),
+                nn.Linear(config.n_embd, self.n_senses)
+            )
+        else:
+            self.sense_attention = LMContextualizationAttention(config, self.n_senses)
 
         
         # Position embeddings
@@ -192,54 +196,43 @@ class BackpackLM(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx, targets=None, chunk_size=32):
-        B, T = idx.size()
-        
-        # Get sense embeddings for each token: (B, T, n_senses * n_embd)
-        #sense_embs = self.sense_embeddings(idx)  # (B, T, n_senses * n_embd)
-        #sense_embs = sense_embs.view(B, T, self.n_senses, self.config.n_embd)
+    def _weighted_token_repr(self, token_embs, pos_emb, chunk_size=32):
+        """Compute sense-weighted token representations before transformer blocks."""
+        B, T, _ = token_embs.size()
 
-        token_embs = self.token_embedding(idx)            # (B, T, n_embd)
+        if self.sense_weighting == 'predictor':
+            context = pos_emb.unsqueeze(0).expand(B, -1, -1)
+            sense_weights = F.softmax(self.sense_predictor(context), dim=-1)
+            x_chunks = []
+            for start in range(0, T, chunk_size):
+                end = min(start + chunk_size, T)
+                token_chunk = token_embs[:, start:end, :]
+                weights_chunk = sense_weights[:, start:end, :]
+                sense_embs_chunk = self.sense_layer(token_chunk)
+                sense_embs_chunk = sense_embs_chunk.view(
+                    B, end - start, self.n_senses, self.config.n_embd
+                )
+                x_chunks.append(torch.einsum('btsd,bts->btd', sense_embs_chunk, weights_chunk))
+            return torch.cat(x_chunks, dim=1)
 
-        # Get position embeddings
-        pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
-        pos_emb = self.pos_embeddings(pos)  # (T, n_embd)
-        
-        # Compute sense weights using multi-head transformer attention
-        att_weights = self.sense_attention(token_embs + pos_emb.unsqueeze(0))  # (B, n_senses, T, T)
-        # average over past tokens to get a sense weight per token
-
-        x_chunks=[]
-
+        att_weights = self.sense_attention(token_embs + pos_emb.unsqueeze(0))
+        x_chunks = []
         for start in range(0, T, chunk_size):
             end = min(start + chunk_size, T)
-        
-            # token embeddings for this chunk
-            token_chunk = token_embs[:, start:end, :]  # (B, chunk, n_embd)
-        
-            # compute sense embeddings on-the-fly
-            sense_embs_chunk = self.sense_layer(token_chunk)  # (B, chunk, n_embd * n_senses)
-            sense_embs_chunk = sense_embs_chunk.view(B, end - start, self.n_senses, self.config.n_embd)
-            # (B, chunk, n_senses, n_embd)
-        
-            # slice attention weights for this chunk
-            # att_weights: (B, n_senses, T, T)
-            # we want attention from all past tokens up to end
-            att_chunk = att_weights[:, :, start:end, :end]  # (B, n_senses, chunk, T_total_so_far)
-        
-            # slice sense embeddings for all positions attended to
-            sense_embs_all = self.sense_layer(token_embs[:, :end, :])  # (B, end, n_senses * n_embd)
-            sense_embs_all = sense_embs_all.view(B, end, self.n_senses, self.config.n_embd)  # (B, end, n_senses, n_embd)
-            sense_embs_all = sense_embs_all.permute(0, 2, 1, 3)  # (B, n_senses, end, n_embd)
-        
-            # multiply attention weights with sense embeddings
-            # (B, n_senses, chunk, end) @ (B, n_senses, end, n_embd) -> (B, n_senses, chunk, n_embd)
+            att_chunk = att_weights[:, :, start:end, :end]
+            sense_embs_all = self.sense_layer(token_embs[:, :end, :])
+            sense_embs_all = sense_embs_all.view(B, end, self.n_senses, self.config.n_embd)
+            sense_embs_all = sense_embs_all.permute(0, 2, 1, 3)
             weighted_senses = torch.matmul(att_chunk, sense_embs_all)
-        
-            # sum over senses to get token representation
-            x_chunk = weighted_senses.sum(dim=1)  # (B, chunk, n_embd)
-            x_chunks.append(x_chunk)
-        x = torch.cat(x_chunks, dim=1)
+            x_chunks.append(weighted_senses.sum(dim=1))
+        return torch.cat(x_chunks, dim=1)
+
+    def forward(self, idx, targets=None, chunk_size=32):
+        B, T = idx.size()
+        token_embs = self.token_embedding(idx)
+        pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
+        pos_emb = self.pos_embeddings(pos)
+        x = self._weighted_token_repr(token_embs, pos_emb, chunk_size=chunk_size)
         
         # Weighted sum of sense vectors
         # sense_embs: (B, T, n_senses, n_embd)
@@ -268,83 +261,24 @@ class BackpackLM(nn.Module):
 
     def get_contextual_embeddings(self, idx, chunk_size=32):
         B, T = idx.size()
-    
         token_embs = self.token_embedding(idx)
-    
         pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
         pos_emb = self.pos_embeddings(pos)
-    
-        att_weights = self.sense_attention(token_embs + pos_emb.unsqueeze(0))
-    
-        x_chunks = []
-    
-        for start in range(0, T, chunk_size):
-            end = min(start + chunk_size, T)
-    
-            att_chunk = att_weights[:, :, start:end, :end]
-    
-            sense_embs_all = self.sense_layer(token_embs[:, :end, :])
-            sense_embs_all = sense_embs_all.view(
-                B, end, self.n_senses, self.config.n_embd
-            )
-            sense_embs_all = sense_embs_all.permute(0, 2, 1, 3)
-    
-            weighted_senses = torch.matmul(att_chunk, sense_embs_all)
-            x_chunk = weighted_senses.sum(dim=1)
-            x_chunks.append(x_chunk)
-    
-        x = torch.cat(x_chunks, dim=1)
-    
+        x = self._weighted_token_repr(token_embs, pos_emb, chunk_size=chunk_size)
         x = x + pos_emb.unsqueeze(0)
         x = self.drop(x)
-    
         segments = 2
-        x = checkpoint_sequential(
-            self.blocks,
-            segments,
-            x,
-            use_reentrant=False,
-        )
-    
-        x = self.ln_f(x)
-
-        return x
-
+        x = checkpoint_sequential(self.blocks, segments, x, use_reentrant=False)
+        return self.ln_f(x)
 
     def get_backpack_mixed_embeddings(self, idx, chunk_size=32):
         B, T = idx.size()
-    
         token_embs = self.token_embedding(idx)
-    
         pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
         pos_emb = self.pos_embeddings(pos)
-    
-        att_weights = self.sense_attention(token_embs + pos_emb.unsqueeze(0))
-    
-        x_chunks = []
-    
-        for start in range(0, T, chunk_size):
-            end = min(start + chunk_size, T)
-    
-            att_chunk = att_weights[:, :, start:end, :end]
-    
-            sense_embs_all = self.sense_layer(token_embs[:, :end, :])
-            sense_embs_all = sense_embs_all.view(
-                B, end, self.n_senses, self.config.n_embd
-            )
-            sense_embs_all = sense_embs_all.permute(0, 2, 1, 3)
-    
-            weighted_senses = torch.matmul(att_chunk, sense_embs_all)
-            x_chunk = weighted_senses.sum(dim=1)
-            x_chunks.append(x_chunk)
-    
-        x = torch.cat(x_chunks, dim=1)
-    
-        # add position/dropout exactly like forward
+        x = self._weighted_token_repr(token_embs, pos_emb, chunk_size=chunk_size)
         x = x + pos_emb.unsqueeze(0)
-        x = self.drop(x)
-    
-        return x
+        return self.drop(x)
 
     
     def get_sense_vectors(self, idx):
