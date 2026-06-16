@@ -11,7 +11,10 @@ import torch
 from transformers import AutoTokenizer
 
 from evaluate import (
+    evaluate_multisimlex,
+    evaluate_perplexity,
     evaluate_sentence_similarity_baseline,
+    evaluate_cross_lingual_multisimlex,
     load_model,
     load_test_data,
 )
