@@ -60,8 +60,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", default="auto")
     parser.add_argument("--data_dir", default="data/europarl")
-    parser.add_argument("--max_multisimlex", type=int, default=None)
-    parser.add_argument("--multisimlex_dir", default="data/multisimlex")
     parser.add_argument("--models", default="backpack,transformer",
                         help="Comma-separated: backpack, transformer")
     parser.add_argument("--out", default="out/ckpt_eval_results.json")
