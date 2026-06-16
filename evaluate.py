@@ -181,7 +181,7 @@ def load_model(out_dir_or_file, device):
         else:
             sense_weighting = getattr(config, 'sense_weighting', 'attention')
         print(f"Loading BackpackLM model (sense_weighting={sense_weighting})...")
-        model = BackpackLM(config, sense_weighting=sense_weighting)
+        model = BackpackLM(config)
     
     model.load_state_dict(checkpoint['model'])
     model.to(device)
