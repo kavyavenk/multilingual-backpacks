@@ -81,7 +81,7 @@ def main():
             print(f"Skipping {name}: no ckpt at {path}")
             continue
         all_results[name] = eval_model(
-            name, path, device, args.data_dir, args.max_multisimlex, args.multisimlex_dir
+            name, path, device, args.data_dir
         )
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
