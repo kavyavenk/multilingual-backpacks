@@ -1777,6 +1777,26 @@ def evaluate_multisimlex(
         return emb.detach().cpu().numpy()
 
 
+    unique_words = sorted(
+    set(df["word1"].tolist() + df["word2"].tolist())
+    )
+    
+    word_to_emb = {}
+    for w in unique_words:
+        emb = get_word_embedding(w)
+        if emb is not None:
+            word_to_emb[w] = emb
+    
+    global_mean = np.mean(
+        np.stack(list(word_to_emb.values())),
+        axis=0
+    )
+
+    def center_and_normalize(v):
+        v = v - global_mean
+        return v / (np.linalg.norm(v) + 1e-8)
+
+
     def compute_similarity(emb1, emb2):
         # Backpack: sense matrix, shape (K, D)
         if emb1.ndim == 2 and emb2.ndim == 2:
@@ -1801,8 +1821,15 @@ def evaluate_multisimlex(
     ]
 
     for w1, w2 in test_pairs:
-        emb1 = get_word_embedding(w1)
-        emb2 = get_word_embedding(w2)
+        emb1 = word_to_emb.get(word1)
+        emb2 = word_to_emb.get(word2)
+        
+        if emb1 is None or emb2 is None:
+            skipped_pairs += 1
+            continue
+        
+        emb1 = center_and_normalize(emb1)
+        emb2 = center_and_normalize(emb2)
     
         sim = cosine_similarity(
             emb1.reshape(1, -1),
@@ -1820,6 +1847,7 @@ def evaluate_multisimlex(
     
     valid_embs = np.stack([v for v in word_to_emb.values() if v is not None])
     global_mean = valid_embs.mean(axis=0)
+    print("Applying global centering")
     
     def normalize_after_global_center(v):
         v = v - global_mean
