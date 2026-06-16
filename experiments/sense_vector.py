@@ -378,14 +378,24 @@ class SenseVectorExperiment:
     
         return baseline, sorted(results, key=lambda x: x["reduction"], reverse=True)
 
-    def per_profession_debias_sense(self, professions, sense_idx=11, male_word=" he", female_word=" she"):
+    def per_profession_debias_sense(
+        self,
+        professions,
+        templates,
+        sense_idx=11,
+        male_word=" he",
+        female_word=" she"
+    ):
         rows = []
     
         for profession in professions:
-            prompt = f"The {profession} said that"
+            prof_prompts = [
+                template.format(profession=profession)
+                for template in templates
+            ]
     
             baseline = self.bias_score(
-                [prompt],
+                prof_prompts,
                 male_word=male_word,
                 female_word=female_word
             )
@@ -413,11 +423,11 @@ class SenseVectorExperiment:
                         out[b, pos, sense_idx, :] = 0.0
     
                 return out.view(B, T, self.model.n_senses * self.model.config.n_embd)
-
+    
             try:
                 self.model.sense_layer.forward = patched_sense_layer
                 ablated = self.bias_score(
-                    [prompt],
+                    prof_prompts,
                     male_word=male_word,
                     female_word=female_word,
                 )
@@ -429,6 +439,7 @@ class SenseVectorExperiment:
                 "baseline": baseline,
                 "ablated_sense_11": ablated,
                 "reduction": baseline - ablated,
+                "percent_reduction": 100 * (baseline - ablated) / baseline,
             })
     
         return sorted(rows, key=lambda x: x["reduction"], reverse=True)
@@ -634,8 +645,9 @@ def main():
         print(r)
     print("\n=== Per-Profession Sense 11 Debias ===")
 
-    rows = ex.per_profession_debias_sense(
+   rows = ex.per_profession_debias_sense(
         professions=professions,
+        templates=templates,
         sense_idx=11,
         male_word=" he",
         female_word=" she"
