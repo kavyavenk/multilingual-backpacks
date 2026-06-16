@@ -93,6 +93,7 @@ def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
         for en, fr in val_pairs:
             f_en.write(en.strip().replace("\n", " ") + "\n")
             f_fr.write(fr.strip().replace("\n", " ") + "\n")
+            print("Saved .txt files")
     
     print(f"Saved raw validation EN to {raw_val_path_en}")
     print(f"Saved raw validation FR to {raw_val_path_fr}")
