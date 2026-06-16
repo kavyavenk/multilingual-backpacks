@@ -432,6 +432,61 @@ def evaluate_sentence_similarity(model, tokenizer, sentence_pairs, device, metho
     return similarities
 
 
+def evaluate_sentence_similarity_baseline(
+    model,
+    tokenizer,
+    device,
+    data_dir="data/europarl",
+    n_pairs=200,
+    seed=42,
+    method="mean",
+):
+    """
+    Compare mean cosine similarity on true translation pairs vs random mismatches.
+
+    Returns mu_trans, sigma_trans, mu_rand, sigma_rand (and n_pairs).
+    """
+    pairs = load_test_data(data_dir, "en-fr", max_samples=n_pairs, split="validation")
+    if not pairs:
+        return None
+
+    pairs = pairs[:n_pairs]
+    trans_results = evaluate_sentence_similarity(model, tokenizer, pairs, device, method=method)
+    trans_sims = [s for _, _, s in trans_results]
+    if not trans_sims:
+        return None
+
+    rng = np.random.default_rng(seed)
+    fr_sents = [fr for _, fr in pairs]
+    perm = rng.permutation(len(pairs))
+    rand_pairs = [(en, fr_sents[perm[i]]) for i, (en, _) in enumerate(pairs)]
+    rand_results = evaluate_sentence_similarity(model, tokenizer, rand_pairs, device, method=method)
+    rand_sims = [s for _, _, s in rand_results]
+
+    result = {
+        "n_pairs": len(trans_sims),
+        "method": method,
+        "mu_trans": float(np.mean(trans_sims)),
+        "std_trans": float(np.std(trans_sims)),
+        "mu_rand": float(np.mean(rand_sims)) if rand_sims else None,
+        "std_rand": float(np.std(rand_sims)) if rand_sims else None,
+        "min_trans": float(np.min(trans_sims)),
+        "max_trans": float(np.max(trans_sims)),
+    }
+    if rand_sims:
+        result["min_rand"] = float(np.min(rand_sims))
+        result["max_rand"] = float(np.max(rand_sims))
+        result["delta_mu"] = result["mu_trans"] - result["mu_rand"]
+
+    print(f"\nSentence similarity ({len(trans_sims)} pairs):")
+    print(f"  mu_trans = {result['mu_trans']:.4f} +/- {result['std_trans']:.4f}")
+    if rand_sims:
+        print(f"  mu_rand  = {result['mu_rand']:.4f} +/- {result['std_rand']:.4f}")
+        print(f"  delta    = {result['delta_mu']:.4f}")
+
+    return result
+
+
 def _is_english_or_french(token_str):
     """
     Check if a token is likely English or French.
@@ -1629,6 +1684,125 @@ def load_multisimlex_from_csv(data_dir, language="en", max_samples=None):
     return list(df[["word1", "word2", "score"]].itertuples(index=False, name=None))
 
 
+def load_cross_lingual_multisimlex_from_csv(
+    data_dir,
+    lang1="en",
+    lang2="fr",
+    max_samples=None,
+    score_diff_threshold=1.2,
+):
+    """
+    Build EN–FR (or other) cross-lingual pairs from MultiSimLex CSVs.
+
+    Following Vulić et al. (2020): for each aligned row, add (src1, tgt1) and
+    (src2, tgt2) with human score = mean(monolingual scores), keeping rows where
+    |score_src - score_tgt| <= score_diff_threshold.
+    """
+    import os
+    import pandas as pd
+
+    lang_map = {"en": "ENG", "eng": "ENG", "fr": "FRA", "fra": "FRA"}
+    src = lang_map.get(lang1.lower(), lang1.upper())
+    tgt = lang_map.get(lang2.lower(), lang2.upper())
+
+    trans = pd.read_csv(os.path.join(data_dir, "translation.csv"))
+    scores = pd.read_csv(os.path.join(data_dir, "scores.csv"))
+    df = trans.merge(scores[["ID", src, tgt]], on="ID")
+    df[src] = pd.to_numeric(df[src], errors="coerce")
+    df[tgt] = pd.to_numeric(df[tgt], errors="coerce")
+
+    w1_src, w2_src = f"{src} 1", f"{src} 2"
+    w1_tgt, w2_tgt = f"{tgt} 1", f"{tgt} 2"
+    df = df.dropna(subset=[src, tgt, w1_src, w2_src, w1_tgt, w2_tgt])
+
+    pairs = []
+    for _, row in df.iterrows():
+        if abs(row[src] - row[tgt]) > score_diff_threshold:
+            continue
+        human = (row[src] + row[tgt]) / 2.0
+        pairs.append((str(row[w1_src]), str(row[w1_tgt]), float(human)))
+        pairs.append((str(row[w2_src]), str(row[w2_tgt]), float(human)))
+
+    if max_samples is not None:
+        pairs = pairs[:max_samples]
+    return pairs
+
+
+def _multisimlex_word_embedding(model, tokenizer, word, device):
+    """Single-word embedding using the same extraction as evaluate_multisimlex."""
+    encoded = tokenizer(str(word), return_tensors="pt", add_special_tokens=False)
+    input_ids = encoded["input_ids"].to(device)
+    if input_ids.numel() == 0:
+        return None
+
+    with torch.no_grad():
+        if hasattr(model, "get_backpack_mixed_embeddings"):
+            hidden = model.get_backpack_mixed_embeddings(input_ids)
+            emb = hidden.mean(dim=1).squeeze(0)
+        elif hasattr(model, "get_contextual_embeddings"):
+            hidden = model.get_contextual_embeddings(input_ids)
+            emb = hidden.mean(dim=1).squeeze(0)
+        elif hasattr(model, "get_sense_vectors"):
+            sense_vecs = model.get_sense_vectors(input_ids)
+            token_vecs = sense_vecs.mean(dim=2)
+            emb = token_vecs.mean(dim=1).squeeze(0)
+        else:
+            token_vecs = model.token_embeddings(input_ids)
+            emb = token_vecs.mean(dim=1).squeeze(0)
+
+        emb = emb - emb.mean()
+        emb = torch.nn.functional.normalize(emb, dim=0)
+
+    return emb.detach().cpu().numpy()
+
+
+def _spearman_from_cross_lingual_pairs(model, tokenizer, device, pairs):
+    """Score cross-lingual word pairs and return Spearman correlation dict."""
+    from scipy.stats import spearmanr
+    from sklearn.metrics.pairwise import cosine_similarity
+
+    unique_words = sorted({w for w1, w2, _ in pairs for w in (w1, w2)})
+    word_to_emb = {}
+    for w in unique_words:
+        emb = _multisimlex_word_embedding(model, tokenizer, w, device)
+        if emb is not None:
+            word_to_emb[w] = emb
+
+    if len(word_to_emb) < 2:
+        return None
+
+    global_mean = np.mean(np.stack(list(word_to_emb.values())), axis=0)
+
+    def center(v):
+        v = v - global_mean
+        return v / (np.linalg.norm(v) + 1e-8)
+
+    predicted, human = [], []
+    skipped = 0
+    for w1, w2, score in pairs:
+        e1, e2 = word_to_emb.get(w1), word_to_emb.get(w2)
+        if e1 is None or e2 is None:
+            skipped += 1
+            continue
+        sim = float(cosine_similarity(center(e1).reshape(1, -1), center(e2).reshape(1, -1))[0][0])
+        predicted.append(sim)
+        human.append(score)
+
+    if len(predicted) < 2:
+        return None
+
+    rho, p_value = spearmanr(predicted, human)
+    return {
+        "correlation": float(rho),
+        "spearman": float(rho),
+        "p_value": float(p_value),
+        "n_pairs": len(predicted),
+        "skipped": skipped,
+        "mean_model_similarity": float(np.mean(predicted)),
+        "mean_human_score": float(np.mean(human)),
+    }
+
+
 def evaluate_multisimlex(
     model,
     tokenizer,
@@ -1938,7 +2112,15 @@ def evaluate_multisimlex(
         "mean_human_score": float(np.mean(human_scores)),
     }
 
-def evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1='en', lang2='fr', max_samples=None):
+def evaluate_cross_lingual_multisimlex(
+    model,
+    tokenizer,
+    device,
+    lang1="en",
+    lang2="fr",
+    max_samples=None,
+    data_dir="data/multisimlex",
+):
     """
     Evaluate cross-lingual word similarity on MultiSimLex.
     Tests if translation pairs have high similarity.
@@ -1950,20 +2132,39 @@ def evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1='en', lan
         lang1: First language code
         lang2: Second language code
         max_samples: Maximum number of word pairs to evaluate (None = all)
+        data_dir: Path to MultiSimLex CSV directory
     
     Returns:
         dict: Results with correlation, p-value, and benchmark comparison
     """
+    print(f"\n{'='*60}")
+    print(f"Cross-lingual MultiSimLex Evaluation - {lang1.upper()}-{lang2.upper()}")
+    print(f"{'='*60}")
+
+    # 1. Full CSV construction (preferred)
+    try:
+        csv_pairs = load_cross_lingual_multisimlex_from_csv(
+            data_dir, lang1, lang2, max_samples=max_samples
+        )
+        if csv_pairs:
+            print(f"Using {len(csv_pairs)} cross-lingual pairs from CSV ({data_dir})")
+            result = _spearman_from_cross_lingual_pairs(model, tokenizer, device, csv_pairs)
+            if result:
+                result["method"] = "csv"
+                result["languages"] = f"{lang1}-{lang2}"
+                print(f"  Spearman={result['correlation']:.4f} (n={result['n_pairs']}, p={result['p_value']:.4f})")
+                return result
+    except Exception as e:
+        print(f"CSV cross-lingual MultiSimLex failed: {e}")
+
     try:
         from datasets import load_dataset
     except ImportError:
         print("Error: datasets library not installed. Install with: pip install datasets")
-        return None
-    
-    print(f"\n{'='*60}")
-    print(f"Cross-lingual MultiSimLex Evaluation - {lang1.upper()}-{lang2.upper()}")
-    print(f"{'='*60}")
-    
+        return _evaluate_cross_lingual_word_similarity_fallback(
+            model, tokenizer, lang1, lang2, device, max_samples
+        )
+
     try:
         # Try loading cross-lingual dataset
         dataset = load_dataset("Helsinki-NLP/multisimlex", f"{lang1}-{lang2}")

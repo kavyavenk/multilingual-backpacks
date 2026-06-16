@@ -14,6 +14,7 @@ from evaluate import (
     evaluate_cross_lingual_multisimlex,
     evaluate_multisimlex,
     evaluate_perplexity,
+    evaluate_sentence_similarity_baseline,
     load_model,
     load_test_data,
 )
@@ -74,7 +75,7 @@ def normalize_multisimlex(result):
     return out
 
 
-def eval_model(name, path, device, data_dir, max_multisimlex=None):
+def eval_model(name, path, device, data_dir, max_multisimlex=None, multisimlex_dir="data/multisimlex"):
     print(f"\n{'='*70}\nEVALUATING: {name}\n{'='*70}")
     t0 = time.time()
     model, config = load_model(path, device)
@@ -109,11 +110,19 @@ def eval_model(name, path, device, data_dir, max_multisimlex=None):
 
     print("\nMultiSimLex cross-lingual...")
     cross = normalize_multisimlex(
-        evaluate_cross_lingual_multisimlex(model, tokenizer, device, max_samples=max_multisimlex)
+        evaluate_cross_lingual_multisimlex(
+            model, tokenizer, device, max_samples=max_multisimlex, data_dir=multisimlex_dir
+        )
     )
     results["multisimlex_cross"] = cross
     if cross and cross.get("correlation") is not None:
-        print(f"  Spearman={cross['correlation']:.4f}")
+        print(f"  Spearman={cross['correlation']:.4f} (n={cross.get('n_pairs')}, method={cross.get('method')})")
+
+    print("\nSentence similarity (translation vs random)...")
+    sent = evaluate_sentence_similarity_baseline(
+        model, tokenizer, device, data_dir=data_dir, n_pairs=200
+    )
+    results["sentence_similarity"] = sent
 
     print("\nPerplexity...")
     pairs = load_test_data(data_dir, "en-fr", max_samples=200, split="validation")
@@ -132,6 +141,9 @@ def main():
     parser.add_argument("--device", default="auto")
     parser.add_argument("--data_dir", default="data/europarl")
     parser.add_argument("--max_multisimlex", type=int, default=None)
+    parser.add_argument("--multisimlex_dir", default="data/multisimlex")
+    parser.add_argument("--models", default="backpack,transformer",
+                        help="Comma-separated: backpack, transformer")
     parser.add_argument("--out", default="out/ckpt_eval_results.json")
     args = parser.parse_args()
 
@@ -142,13 +154,17 @@ def main():
         "backpack": "out/backpack_full",
         "transformer": "out/transformer_full",
     }
+    selected = [m.strip() for m in args.models.split(",") if m.strip()]
 
     all_results = {}
-    for name, path in models.items():
-        if not os.path.exists(os.path.join(path, "ckpt.pt")):
+    for name in selected:
+        path = models.get(name)
+        if not path or not os.path.exists(os.path.join(path, "ckpt.pt")):
             print(f"Skipping {name}: no ckpt at {path}")
             continue
-        all_results[name] = eval_model(name, path, device, args.data_dir, args.max_multisimlex)
+        all_results[name] = eval_model(
+            name, path, device, args.data_dir, args.max_multisimlex, args.multisimlex_dir
+        )
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w") as f:
@@ -160,11 +176,15 @@ def main():
         emb = r.get("embedding_stats", {})
         en = r.get("multisimlex_en", {}) or {}
         fr = r.get("multisimlex_fr", {}) or {}
+        cross = r.get("multisimlex_cross", {}) or {}
+        sent = r.get("sentence_similarity", {}) or {}
         ppl = r.get("perplexity", {}) or {}
         print(
             f"{name:12s} | emb_cos={emb.get('mean_cosine', 'n/a'):>6} "
             f"| EN ρ={en.get('correlation', 'n/a')} "
             f"| FR ρ={fr.get('correlation', 'n/a')} "
+            f"| XL ρ={cross.get('correlation', 'n/a')} "
+            f"| μ_trans={sent.get('mu_trans', 'n/a')} "
             f"| PPL={ppl.get('perplexity', 'n/a')}"
         )
 
