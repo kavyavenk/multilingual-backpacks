@@ -11,10 +11,8 @@ import torch
 from transformers import AutoTokenizer
 
 from evaluate import (
-    evaluate_multisimlex,
     evaluate_perplexity,
     evaluate_sentence_similarity_baseline,
-    evaluate_cross_lingual_multisimlex,
     load_model,
     load_test_data,
 )
@@ -30,52 +28,8 @@ def pick_device(requested):
     return "cpu"
 
 
-def embedding_cosine_stats(model, tokenizer, words, device):
-    """Mean off-diagonal cosine similarity between word embeddings."""
-    embs = []
-    for word in words:
-        ids = tokenizer.encode(word, add_special_tokens=False)
-        if not ids:
-            continue
-        input_ids = torch.tensor([ids[0]], device=device).unsqueeze(0)
-        with torch.no_grad():
-            if hasattr(model, "get_backpack_mixed_embeddings"):
-                vec = model.get_backpack_mixed_embeddings(input_ids).mean(dim=1).squeeze(0)
-            elif hasattr(model, "token_embedding"):
-                vec = model.token_embedding(input_ids).squeeze(0).squeeze(0)
-            elif hasattr(model, "token_embeddings"):
-                vec = model.token_embeddings(input_ids).squeeze(0).squeeze(0)
-            else:
-                continue
-            vec = torch.nn.functional.normalize(vec, dim=0)
-            embs.append(vec.cpu().numpy())
 
-    if len(embs) < 2:
-        return {"n_words": len(embs), "mean_cosine": None}
-
-    mat = np.stack(embs)
-    sims = mat @ mat.T
-    n = len(embs)
-    off_diag = sims[~np.eye(n, dtype=bool)]
-    return {
-        "n_words": n,
-        "mean_cosine": float(off_diag.mean()),
-        "std_cosine": float(off_diag.std()),
-        "min_cosine": float(off_diag.min()),
-        "max_cosine": float(off_diag.max()),
-    }
-
-
-def normalize_multisimlex(result):
-    if result is None:
-        return None
-    out = dict(result)
-    if "spearman" in out and "correlation" not in out:
-        out["correlation"] = out["spearman"]
-    return out
-
-
-def eval_model(name, path, device, data_dir, max_multisimlex=None, multisimlex_dir="data/multisimlex"):
+def eval_model(name, path, device, data_dir):
     print(f"\n{'='*70}\nEVALUATING: {name}\n{'='*70}")
     t0 = time.time()
     model, config = load_model(path, device)
@@ -83,40 +37,6 @@ def eval_model(name, path, device, data_dir, max_multisimlex=None, multisimlex_d
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
 
-    results = {
-        "model_name": name,
-        "model_path": path,
-        "device": device,
-        "parameters": params,
-        "sense_weighting": getattr(model, "sense_weighting", None),
-    }
-
-    sample_words = [
-        "hello", "world", "parliament", "support", "proposal",
-        "bonjour", "monde", "parlement", "soutenir", "proposition",
-        "car", "dog", "bank", "money", "star",
-    ]
-    results["embedding_stats"] = embedding_cosine_stats(model, tokenizer, sample_words, device)
-    print(f"Embedding stats: {results['embedding_stats']}")
-
-    for lang in ("en", "fr"):
-        print(f"\nMultiSimLex {lang}...")
-        r = normalize_multisimlex(
-            evaluate_multisimlex(model, tokenizer, device, language=lang, max_samples=max_multisimlex)
-        )
-        results[f"multisimlex_{lang}"] = r
-        if r and r.get("correlation") is not None:
-            print(f"  Spearman={r['correlation']:.4f} (n={r['num_pairs']}, p={r['p_value']:.4f})")
-
-    print("\nMultiSimLex cross-lingual...")
-    cross = normalize_multisimlex(
-        evaluate_cross_lingual_multisimlex(
-            model, tokenizer, device, max_samples=max_multisimlex, data_dir=multisimlex_dir
-        )
-    )
-    results["multisimlex_cross"] = cross
-    if cross and cross.get("correlation") is not None:
-        print(f"  Spearman={cross['correlation']:.4f} (n={cross.get('n_pairs')}, method={cross.get('method')})")
 
     print("\nSentence similarity (translation vs random)...")
     sent = evaluate_sentence_similarity_baseline(
@@ -173,17 +93,9 @@ def main():
 
     print(f"\n{'='*70}\nSUMMARY\n{'='*70}")
     for name, r in all_results.items():
-        emb = r.get("embedding_stats", {})
-        en = r.get("multisimlex_en", {}) or {}
-        fr = r.get("multisimlex_fr", {}) or {}
-        cross = r.get("multisimlex_cross", {}) or {}
         sent = r.get("sentence_similarity", {}) or {}
         ppl = r.get("perplexity", {}) or {}
         print(
-            f"{name:12s} | emb_cos={emb.get('mean_cosine', 'n/a'):>6} "
-            f"| EN ρ={en.get('correlation', 'n/a')} "
-            f"| FR ρ={fr.get('correlation', 'n/a')} "
-            f"| XL ρ={cross.get('correlation', 'n/a')} "
             f"| μ_trans={sent.get('mu_trans', 'n/a')} "
             f"| PPL={ppl.get('perplexity', 'n/a')}"
         )
