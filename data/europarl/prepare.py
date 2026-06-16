@@ -52,6 +52,7 @@ def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
     # Combine English and French sentences
     # For multilingual training, we'll interleave or concatenate sentences
     all_texts = []
+    raw_pairs = []
     for item in tqdm(dataset, desc="Processing sentences"):
         # Get language codes
         lang1, lang2 = language_pair.split('-')
@@ -66,6 +67,8 @@ def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
             text2 = item.get(lang2, item.get('fr', ''))
         
         if text1 and text2:
+            raw_pairs.append((text1, text2))
+
             # Option 1: Interleave sentences with language separator
             combined = f"{text1} <|lang_sep|> {text2}"
             all_texts.append(combined)
@@ -79,6 +82,10 @@ def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
     # Split into train and validation
     n = len(all_texts)
     train_val_cutoff = int(n*0.9)
+
+    raw_cutoff = int(len(raw_pairs) * 0.9)
+    val_pairs = raw_pairs[raw_cutoff:]
+    
     
     # Tokenize all texts efficiently in batches
     print("Tokenizing texts (this may take a few minutes)...")
@@ -90,10 +97,10 @@ def prepare_europarl_data(language_pair='en-fr', max_samples=50000):
     
     with open(raw_val_path_en, "w", encoding="utf-8") as f_en, \
          open(raw_val_path_fr, "w", encoding="utf-8") as f_fr:
-        for en, fr in [en, fr]:
+        for en, fr in val_pairs:
             f_en.write(en.strip().replace("\n", " ") + "\n")
             f_fr.write(fr.strip().replace("\n", " ") + "\n")
-            print("Saved .txt files")
+        print("Saved .txt files")
     
     print(f"Saved raw validation EN to {raw_val_path_en}")
     print(f"Saved raw validation FR to {raw_val_path_fr}")
