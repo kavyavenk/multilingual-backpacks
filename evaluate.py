@@ -2325,6 +2325,30 @@ def load_test_data(data_dir='data/europarl', language_pair='en-fr', max_samples=
         except Exception as e:
             print(f"Error loading dataset: {e}")
             # Try loading from segregated files if available
+            ----
+            # Try simple aligned text files: en.txt and fr.txt
+            en_file = os.path.join(data_dir, f"{lang1}.txt")
+            fr_file = os.path.join(data_dir, f"{lang2}.txt")
+
+            if os.path.exists(en_file) and os.path.exists(fr_file):
+                with open(en_file, encoding="utf-8") as f1, \
+                     open(fr_file, encoding="utf-8") as f2:
+                    pairs = [
+                        (line1.strip(), line2.strip())
+                        for line1, line2 in zip(f1, f2)
+                        if line1.strip() and line2.strip()
+                    ]
+
+                if max_samples:
+                    pairs = pairs[:max_samples]
+
+                print(f"Loaded {len(pairs)} pairs from {en_file} and {fr_file}")
+                return pairs
+
+            # Try loading from segregated files if available
+            try:
+                from data.europarl.read_segregated import SegregatedDataReader
+                reader = SegregatedDataReader(data_dir, language_pair)
             try:
                 from data.europarl.read_segregated import SegregatedDataReader
                 reader = SegregatedDataReader(data_dir, language_pair)
