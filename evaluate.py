@@ -1756,7 +1756,6 @@ def evaluate_multisimlex(
             if hasattr(model, "get_backpack_mixed_embeddings"):
                 hidden = model.get_backpack_mixed_embeddings(input_ids)
                 emb = hidden.mean(dim=1).squeeze(0)
-                print("mixed emb")
         
             elif hasattr(model, "get_contextual_embeddings"):
                 hidden = model.get_contextual_embeddings(input_ids)
