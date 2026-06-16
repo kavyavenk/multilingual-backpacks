@@ -256,5 +256,16 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    ex = SenseVectorExperiment()
 
+    words = ['hello', 'bonjour', 'world', 'monde', 'language', 'langue']
+
+    for word in words:
+        print("=" * 80)
+        print(word)
+        try:
+            projections = ex.sense_projection(word, k=10)
+            for sense_i, top_words in enumerate(projections):
+                print(f"sense {sense_i}: {top_words}")
+        except Exception as e:
+            print(f"FAILED for {word}: {e}")
