@@ -282,6 +282,55 @@ class SenseVectorExperiment:
         
             return sum(scores) / len(scores)
 
+    def transformer_nullspace_bias_score(
+        self,
+        prompts,
+        target_words,
+        male_word=" he",
+        female_word=" she"
+    ):
+        old_forward = self.model.token_embeddings.forward
+    
+        male_id = self.tokenizer.encode(male_word, add_special_tokens=False)[0]
+        female_id = self.tokenizer.encode(female_word, add_special_tokens=False)[0]
+    
+        with torch.no_grad():
+            E = self.model.token_embeddings.weight
+            g = E[male_id] - E[female_id]
+            g = g / (g.norm() + 1e-12)
+    
+        all_target_ids = []
+        for word in target_words:
+            all_target_ids.extend(self.tokenizer.encode(word, add_special_tokens=False))
+    
+        all_target_ids = list(set(all_target_ids))
+    
+        def patched_embedding(input_ids):
+            emb = old_forward(input_ids)
+    
+            mask = torch.zeros_like(input_ids, dtype=torch.bool)
+            for tok_id in all_target_ids:
+                mask |= (input_ids == tok_id)
+    
+            if mask.any():
+                selected = emb[mask]
+                projection = (selected @ g).unsqueeze(-1) * g
+                emb[mask] = selected - projection
+    
+            return emb
+    
+        try:
+            self.model.token_embeddings.forward = patched_embedding
+            score = self.bias_score(
+                prompts,
+                male_word=male_word,
+                female_word=female_word
+            )
+        finally:
+            self.model.token_embeddings.forward = old_forward
+    
+        return score
+
     def sweep_debias_senses(self, prompts, target_words, male_word=" he", female_word=" she"):
         baseline = self.bias_score(prompts, male_word, female_word)
     
@@ -495,6 +544,16 @@ def main():
         ]
     )
     '''
+
+    print("\n=== Pronoun Tokenization Check ===")
+
+    for w in ["he", " he", "she", " she"]:
+        ids = tokenizer.encode(w, add_special_tokens=False)
+        print(
+            repr(w),
+            ids,
+            [tokenizer.decode([i]) for i in ids]
+        )
     print("\n=== Bias Score Test ===")
 
     professions = [
@@ -520,7 +579,8 @@ def main():
 
     print("AVERAGE BIAS SCORE:", avg_bias)
     
-    
+
+    '''
     for r in results[:10]:
         print("=" * 60)
         print("sense:", r["sense"])
@@ -528,6 +588,20 @@ def main():
         print("ablated:", r["ablated"])
         print("baseline:", r["baseline"])
         print("diff:", r["diff"])
+    '''
+
+
+    if hasattr(model, "token_embeddings") and not hasattr(model, "sense_layer"):
+        print("\n=== Transformer Nullspace Projection Bias Score ===")
+    
+        projected_bias = ex.transformer_nullspace_bias_score(
+            prompts=prompts,
+            target_words=professions,
+            male_word=" he",
+            female_word=" she"
+        )
+    
+        print("TRANSFORMER NULLSPACE BIAS SCORE:", projected_bias)
     '''
     print("\n=== Debias Sense Sweep ===")
 
