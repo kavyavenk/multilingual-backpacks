@@ -2348,9 +2348,6 @@ def load_test_data(data_dir='data/europarl', language_pair='en-fr', max_samples=
             try:
                 from data.europarl.read_segregated import SegregatedDataReader
                 reader = SegregatedDataReader(data_dir, language_pair)
-            try:
-                from data.europarl.read_segregated import SegregatedDataReader
-                reader = SegregatedDataReader(data_dir, language_pair)
                 pairs = reader.get_parallel_pairs(limit=max_samples)
                 if pairs:
                     print(f"Loaded {len(pairs)} pairs from segregated files")
