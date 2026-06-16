@@ -3536,57 +3536,41 @@ def main():
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
 
- # MultiSimLex evaluation
+     # MultiSimLex evaluation
     if args.multisimlex:
-        print("\n" + "="*60)
-        print("MultiSimLex Benchmark Evaluation")
-        print("="*60)
-
         results = {}
-
-
-        if args.cross_lingual:
-            for lang_pair in ["en-fr", "fr-en"]:
-                print(f"\nRunning Cross-lingual MultiSimLex for: {lang_pair}")
-
-                results = evaluate_multisimlex(
-                    model,
-                    tokenizer,
-                    device,
-                    language="en-fr",
-                    max_samples=None,
-                    data_dir=args.multisimlex_dir,
-                )
-                print(results[lang])
-                
-        else:
-            for lang in args.languages:
-                print(f"\nRunning MultiSimLex for language: {lang}")
     
-                results[lang] = evaluate_multisimlex(
-                    model,
-                    tokenizer,
-                    device,
-                    language=lang,
-                    max_samples=None,
-                    data_dir=args.multisimlex_dir,
-                )
-
-                print(results[lang])
+        if args.cross_lingual:
+            eval_langs = ["en-fr", "fr-en"]
+        else:
+            eval_langs = args.languages
+    
+        for lang in eval_langs:
+            print(f"\nRunning MultiSimLex for language: {lang}")
+    
+            results[lang] = evaluate_multisimlex(
+                model,
+                tokenizer,
+                device,
+                language=lang,
+                max_samples=None,
+                data_dir=args.multisimlex_dir,
+            )
+    
+            print(results[lang])
       
-        # Summary
+          
+            # Summary
         if results:
-            print("\n" + "="*60)
-            print("MultiSimLex Summary")
-            print("="*60)
-            
+                print("\n" + "="*60)
+                print("MultiSimLex Summary")
+                print("="*60)
+                
             for key, result in results.items():
                 if result.get("spearman") is None:
                     print(f"{key.upper()}: failed ({result.get('error')})")
                 else:
                     print(f"{key.upper()}: {result['spearman']:.4f}")
-    
-
     
     print("\n=== Sense Diversity Check ===")
 
