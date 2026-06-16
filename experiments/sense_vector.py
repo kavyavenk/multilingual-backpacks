@@ -494,7 +494,7 @@ def main():
     
     # Initialize experiment
     ex = SenseVectorExperiment(model, tokenizer, device)
-    '''
+    
     # Test words
     print("\n=== English Word Sense Analysis ===")
     english_words = [' hello', ' world', ' language', ' model', ' learning']
@@ -543,7 +543,7 @@ def main():
             "modèle"
         ]
     )
-    '''
+    
 
     print("\n=== Pronoun Tokenization Check ===")
 
@@ -596,7 +596,7 @@ def main():
     print("AVERAGE BIAS SCORE:", avg_bias)
     
 
-    '''
+    
     for r in results[:10]:
         print("=" * 60)
         print("sense:", r["sense"])
@@ -604,7 +604,7 @@ def main():
         print("ablated:", r["ablated"])
         print("baseline:", r["baseline"])
         print("diff:", r["diff"])
-    '''
+    
 
 
     if hasattr(model, "token_embeddings") and not hasattr(model, "sense_layer"):
@@ -618,7 +618,7 @@ def main():
         )
     
         print("TRANSFORMER NULLSPACE BIAS SCORE:", projected_bias)
-    '''
+    
     print("\n=== Debias Sense Sweep ===")
 
     baseline, debias_results = ex.sweep_debias_senses(
@@ -643,8 +643,6 @@ def main():
     
     for row in rows:
         print(row)
-    '''
-    
 
 if __name__ == '__main__':
     main()
