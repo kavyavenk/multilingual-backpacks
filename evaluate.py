@@ -1839,11 +1839,10 @@ def evaluate_multisimlex(
     ]
 
     for w1, w2 in test_pairs:
-        emb1 = word_to_emb.get(word1)
-        emb2 = word_to_emb.get(word2)
+        emb1 = word_to_emb.get(w1)
+        emb2 = word_to_emb.get(w2)
         
         if emb1 is None or emb2 is None:
-            skipped_pairs += 1
             continue
         
         emb1 = center_and_normalize(emb1)
@@ -3558,8 +3557,6 @@ def main():
             )
     
             print(results[lang])
-      
-          
         # Summary
         if results:
             print("\n" + "="*60)
