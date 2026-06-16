@@ -3566,12 +3566,12 @@ def main():
             print("MultiSimLex Summary")
             print("="*60)
                 
-        for key, result in results.items():
-            if result.get("spearman") is None:
-                print(f"{key.upper()}: failed ({result.get('error')})")
-            else:
-                print(f"{key.upper()}: {result['spearman']:.4f}")
-    
+            for key, result in results.items():
+                if result.get("spearman") is None:
+                    print(f"{key.upper()}: failed ({result.get('error')})")
+                else:
+                    print(f"{key.upper()}: {result['spearman']:.4f}")
+        
     print("\n=== Sense Diversity Check ===")
 
     word = "bank"
