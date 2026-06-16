@@ -1666,9 +1666,8 @@ def evaluate_multisimlex(
         "fra": "FRA",
     }
 
+    cross_lingual = "-" in language
 
-    
-    lang = lang_map.get(language.lower(), language.upper())
 
     translation_path = os.path.join(data_dir, "translation.csv")
     scores_path = os.path.join(data_dir, "scores.csv")
@@ -1684,9 +1683,28 @@ def evaluate_multisimlex(
     trans = pd.read_csv(translation_path)
     scores = pd.read_csv(scores_path)
 
-    word1_col = f"{lang} 1"
-    word2_col = f"{lang} 2"
-    score_col = lang
+
+    if cross_lingual:
+        src, tgt = language.lower().split("-")
+    
+        src = lang_map[src]
+        tgt = lang_map[tgt]
+    
+        word1_col = f"{src} 1"
+        word2_col = f"{tgt} 2"
+    
+        score_col = src
+    
+        lang = f"{src}-{tgt}"
+    
+    else:
+        lang = lang_map.get(language.lower(), language.upper())
+    
+        word1_col = f"{lang} 1"
+        word2_col = f"{lang} 2"
+
+        score_col = lang
+
 
     required_trans_cols = ["ID", word1_col, word2_col]
     required_score_cols = ["ID", score_col]
@@ -3506,17 +3524,18 @@ def main():
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
 
- # MultiSimLex evaluation
+     # MultiSimLex evaluation
     if args.multisimlex:
-        print("\n" + "="*60)
-        print("MultiSimLex Benchmark Evaluation")
-        print("="*60)
-
         results = {}
-
-        for lang in args.languages:
+    
+        if args.cross_lingual:
+            eval_langs = ["en-fr", "fr-en"]
+        else:
+            eval_langs = args.languages
+    
+        for lang in eval_langs:
             print(f"\nRunning MultiSimLex for language: {lang}")
-
+    
             results[lang] = evaluate_multisimlex(
                 model,
                 tokenizer,
@@ -3525,29 +3544,20 @@ def main():
                 max_samples=None,
                 data_dir=args.multisimlex_dir,
             )
-
+    
             print(results[lang])
-        
-        # Cross-lingual evaluation
-        if args.cross_lingual and len(args.languages) >= 2:
-            lang1, lang2 = args.languages[0], args.languages[1]
-            cross_result = evaluate_cross_lingual_multisimlex(model, tokenizer, device, lang1, lang2)
-            if cross_result:
-                results[f'{lang1}-{lang2}'] = cross_result
-        
         # Summary
         if results:
             print("\n" + "="*60)
             print("MultiSimLex Summary")
             print("="*60)
+                
             for key, result in results.items():
                 if result.get("spearman") is None:
                     print(f"{key.upper()}: failed ({result.get('error')})")
                 else:
                     print(f"{key.upper()}: {result['spearman']:.4f}")
-    
-
-    
+        
     print("\n=== Sense Diversity Check ===")
 
     word = "bank"
