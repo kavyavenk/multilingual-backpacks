@@ -1753,14 +1753,20 @@ def evaluate_multisimlex(
             return None
             
         with torch.no_grad():
-            if hasattr(model, "get_contextual_embeddings"):  # Backpack
+            if hasattr(model, "get_backpack_mixed_embeddings"):
+                hidden = model.get_backpack_mixed_embeddings(input_ids)
+                emb = hidden.mean(dim=1).squeeze(0)
+                print("mixed emb")
+        
+            elif hasattr(model, "get_contextual_embeddings"):
                 hidden = model.get_contextual_embeddings(input_ids)
                 emb = hidden.mean(dim=1).squeeze(0)
         
-            elif hasattr(model, "get_sense_vectors"):  # fallback old Backpack
+            elif hasattr(model, "get_sense_vectors"):
                 sense_vecs = model.get_sense_vectors(input_ids)
                 token_vecs = sense_vecs.mean(dim=2)
                 emb = token_vecs.mean(dim=1).squeeze(0)
+
         
             else:  # Transformer
                 token_vecs = model.token_embeddings(input_ids)
