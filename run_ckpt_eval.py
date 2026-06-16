@@ -77,7 +77,7 @@ def main():
 
     models = {
         "backpack":"/content/drive/MyDrive/multilingual-backpacks-checkpoints_real/backpack_full",
-        "transformer": "out/transformer_full",
+        "transformer": "/content/drive/MyDrive/multilingual-backpacks-checkpoints-real/transformer_ckpt_corrected/",
     }
     selected = [m.strip() for m in args.models.split(",") if m.strip()]
 
