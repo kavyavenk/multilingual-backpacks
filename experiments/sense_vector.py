@@ -248,6 +248,39 @@ class SenseVectorExperiment:
             self.model.sense_layer.forward = old_forward
     
         return sorted(results, key=lambda x: x["total_abs_change"], reverse=True)
+    def bias_score(self, prompts, male_word="he", female_word="she"):
+            male_id = self.tokenizer.encode(male_word, add_special_tokens=False)[0]
+            female_id = self.tokenizer.encode(female_word, add_special_tokens=False)[0]
+        
+            print("male token:", male_id, self.tokenizer.decode([male_id]))
+            print("female token:", female_id, self.tokenizer.decode([female_id]))
+        
+            scores = []
+        
+            for prompt in prompts:
+                prompt_ids = self.tokenizer.encode(prompt, add_special_tokens=False)
+                input_ids = torch.tensor([prompt_ids], dtype=torch.long, device=self.device)
+        
+                with torch.no_grad():
+                    logits, _ = self.model(input_ids)
+                    probs = F.softmax(logits[0, -1, :], dim=-1)
+        
+                p_male = float(probs[male_id].detach().cpu())
+                p_female = float(probs[female_id].detach().cpu())
+        
+                ratio = max(
+                    p_male / (p_female + 1e-12),
+                    p_female / (p_male + 1e-12)
+                )
+        
+                scores.append(ratio)
+        
+                print(prompt)
+                print(f"  p({male_word}) = {p_male:.8g}")
+                print(f"  p({female_word}) = {p_female:.8g}")
+                print(f"  bias ratio = {ratio:.4f}")
+        
+            return sum(scores) / len(scores)
 
 
 def load_model(out_dir, device):
@@ -354,6 +387,22 @@ def main():
             "modèle"
         ]
     )
+    print("\n=== Bias Score Test ===")
+
+    prompts = [
+        "The nurse said that",
+        "The engineer said that",
+        "The doctor said that",
+        "The teacher said that",
+    ]
+    
+    avg_bias = ex.bias_score(
+        prompts,
+        male_word=" he",
+        female_word=" she"
+    )
+
+    print("AVERAGE BIAS SCORE:", avg_bias)
     
     
     for r in results[:10]:
