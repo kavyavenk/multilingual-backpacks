@@ -382,7 +382,7 @@ class SenseVectorExperiment:
         self,
         professions,
         templates,
-        sense_idx=11,
+        sense_idx=5,
         male_word="il",
         female_word="elle"
     ):
@@ -676,12 +676,12 @@ def main():
     for r in debias_results:
         print(r)
     
-    print("\n=== Per-Profession Sense 11 Debias ===")
+    print("\n=== Per-Profession Sense 5 Debias ===")
     
     rows = ex.per_profession_debias_sense(
         professions=professions,
         templates=templates,
-        sense_idx=11,
+        sense_idx=5,
         male_word="il",
         female_word="elle"
     )
