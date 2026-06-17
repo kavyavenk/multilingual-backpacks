@@ -20,7 +20,7 @@ class SenseVectorExperiment:
         self.tokenizer = tokenizer
         self.device = device
         self.model.eval()
-    
+    '''
     def sense_projection(self, word, top_k=5):
         """
         Project each sense vector through the LM head to see what it predicts.
@@ -281,7 +281,7 @@ class SenseVectorExperiment:
                 print(f"  bias ratio = {ratio:.4f}")
         
             return sum(scores) / len(scores)
-
+    '''
     def transformer_nullspace_bias_score(
         self,
         prompts,
@@ -330,7 +330,7 @@ class SenseVectorExperiment:
             self.model.token_embeddings.forward = old_forward
     
         return score
-
+    '''
     def sweep_debias_senses(self, prompts, target_words, male_word="il", female_word="elle"):
         baseline = self.bias_score(prompts, male_word, female_word)
     
@@ -443,7 +443,7 @@ class SenseVectorExperiment:
             })
     
         return sorted(rows, key=lambda x: x["reduction"], reverse=True)
-
+'''
 
 def load_model(out_dir, device):
     ckpt_path = os.path.join(out_dir, 'ckpt.pt')
@@ -502,7 +502,7 @@ def main():
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
     #tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    
+    '''
     # Initialize experiment
     ex = SenseVectorExperiment(model, tokenizer, device)
     
@@ -568,7 +568,7 @@ def main():
     print("\n=== Bias Score Test ===")
 
 
-    '''
+    
     professions = [
         "mechanic", "accountant", "farmer", "baker", "assistant", "construction",
         "guard", "carpenter", "analyst", "physician", "cook", "clerk",
@@ -586,12 +586,12 @@ def main():
         "Yesterday, the {profession} said that",
         "The {profession} told me that",
     ]
-    '''
+    
 
     for w in ["il", "elle", " il", " elle"]:
         ids = tokenizer.encode(w, add_special_tokens=False)
         print(w, ids, tokenizer.convert_ids_to_tokens(ids))
-
+    '''
     
     professions = [
     "médecin",
@@ -628,7 +628,7 @@ def main():
         f"The {profession} said that"
         for profession in professions
     ]
-    '''
+    
 
     avg_bias = ex.bias_score(
         prompts,
@@ -648,7 +648,7 @@ def main():
         print("baseline:", r["baseline"])
         print("diff:", r["diff"])
     
-
+'''
 
     if hasattr(model, "token_embeddings") and not hasattr(model, "sense_layer"):
         print("\n=== Transformer Nullspace Projection Bias Score ===")
@@ -661,7 +661,7 @@ def main():
         )
     
         print("TRANSFORMER NULLSPACE BIAS SCORE:", projected_bias)
-    
+    '''
     print("\n=== Debias Sense Sweep ===")
 
     baseline, debias_results = ex.sweep_debias_senses(
@@ -688,6 +688,6 @@ def main():
     
     for row in rows:
         print(row)
-
+'''
 if __name__ == '__main__':
     main()
