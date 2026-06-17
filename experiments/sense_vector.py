@@ -248,7 +248,7 @@ class SenseVectorExperiment:
             self.model.sense_layer.forward = old_forward
     
         return sorted(results, key=lambda x: x["total_abs_change"], reverse=True)
-    def bias_score(self, prompts, male_word="he", female_word="she"):
+    def bias_score(self, prompts, male_word="il", female_word="elle"):
             male_id = self.tokenizer.encode(male_word, add_special_tokens=False)[0]
             female_id = self.tokenizer.encode(female_word, add_special_tokens=False)[0]
         
@@ -286,8 +286,8 @@ class SenseVectorExperiment:
         self,
         prompts,
         target_words,
-        male_word=" he",
-        female_word=" she"
+        male_word="il",
+        female_word="elle"
     ):
         old_forward = self.model.token_embeddings.forward
     
@@ -331,7 +331,7 @@ class SenseVectorExperiment:
     
         return score
 
-    def sweep_debias_senses(self, prompts, target_words, male_word=" he", female_word=" she"):
+    def sweep_debias_senses(self, prompts, target_words, male_word="il", female_word="elle"):
         baseline = self.bias_score(prompts, male_word, female_word)
     
         results = []
@@ -383,8 +383,8 @@ class SenseVectorExperiment:
         professions,
         templates,
         sense_idx=11,
-        male_word=" he",
-        female_word=" she"
+        male_word="il",
+        female_word="elle"
     ):
         rows = []
     
@@ -558,7 +558,7 @@ def main():
 
     print("\n=== Pronoun Tokenization Check ===")
 
-    for w in ["he", " he", "she", " she"]:
+    for w in ["il", " il", "elle", " elle"]:
         ids = tokenizer.encode(w, add_special_tokens=False)
         print(
             repr(w),
@@ -656,8 +656,8 @@ def main():
         projected_bias = ex.transformer_nullspace_bias_score(
             prompts=prompts,
             target_words=professions,
-            male_word=" he",
-            female_word=" she"
+            male_word="il",
+            female_word="elle"
         )
     
         print("TRANSFORMER NULLSPACE BIAS SCORE:", projected_bias)
@@ -667,8 +667,8 @@ def main():
     baseline, debias_results = ex.sweep_debias_senses(
         prompts=prompts,
         target_words=professions,
-        male_word=" he",
-        female_word=" she"
+        male_word="il",
+        female_word="elle"
     )
     
     print("BASELINE:", baseline)
@@ -682,8 +682,8 @@ def main():
         professions=professions,
         templates=templates,
         sense_idx=11,
-        male_word=" he",
-        female_word=" she"
+        male_word="il",
+        female_word="elle"
     )
     
     for row in rows:
