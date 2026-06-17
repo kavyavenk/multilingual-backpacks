@@ -502,10 +502,10 @@ def main():
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
     #tokenizer = AutoTokenizer.from_pretrained("gpt2")
-    '''
+    
     # Initialize experiment
     ex = SenseVectorExperiment(model, tokenizer, device)
-    
+    '''
     # Test words
     print("\n=== English Word Sense Analysis ===")
     english_words = [' hello', ' world', ' language', ' model', ' learning']
