@@ -20,7 +20,7 @@ class SenseVectorExperiment:
         self.tokenizer = tokenizer
         self.device = device
         self.model.eval()
-    '''
+    
     def sense_projection(self, word, top_k=5):
         """
         Project each sense vector through the LM head to see what it predicts.
@@ -281,7 +281,7 @@ class SenseVectorExperiment:
                 print(f"  bias ratio = {ratio:.4f}")
         
             return sum(scores) / len(scores)
-    '''
+    
     def transformer_nullspace_bias_score(
         self,
         prompts,
@@ -330,7 +330,7 @@ class SenseVectorExperiment:
             self.model.token_embeddings.forward = old_forward
     
         return score
-    '''
+    
     def sweep_debias_senses(self, prompts, target_words, male_word="il", female_word="elle"):
         baseline = self.bias_score(prompts, male_word, female_word)
     
@@ -443,7 +443,7 @@ class SenseVectorExperiment:
             })
     
         return sorted(rows, key=lambda x: x["reduction"], reverse=True)
-'''
+
 
 def load_model(out_dir, device):
     ckpt_path = os.path.join(out_dir, 'ckpt.pt')
@@ -505,7 +505,7 @@ def main():
     
     # Initialize experiment
     ex = SenseVectorExperiment(model, tokenizer, device)
-    '''
+    
     # Test words
     print("\n=== English Word Sense Analysis ===")
     english_words = [' hello', ' world', ' language', ' model', ' learning']
@@ -648,7 +648,6 @@ def main():
         print("baseline:", r["baseline"])
         print("diff:", r["diff"])
     
-'''
 
     if hasattr(model, "token_embeddings") and not hasattr(model, "sense_layer"):
         print("\n=== Transformer Nullspace Projection Bias Score ===")
@@ -661,7 +660,7 @@ def main():
         )
     
         print("TRANSFORMER NULLSPACE BIAS SCORE:", projected_bias)
-    '''
+
     print("\n=== Debias Sense Sweep ===")
 
     baseline, debias_results = ex.sweep_debias_senses(
@@ -688,6 +687,5 @@ def main():
     
     for row in rows:
         print(row)
-'''
 if __name__ == '__main__':
     main()
