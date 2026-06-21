@@ -323,7 +323,7 @@ def main():
                     'training_log': training_log,  # Save training log in checkpoint
                 }
                 os.makedirs(args.out_dir, exist_ok=True)
-                ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
+                ckpt_path = os.path.join(args.out_dir, 'june_ckpt.pt')
                 torch.save(checkpoint, ckpt_path)
                 print(f"✓ Checkpoint saved ({checkpoint_reason}) at iteration {iter_num}")
 
