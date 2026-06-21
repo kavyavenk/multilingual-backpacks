@@ -677,12 +677,12 @@ def main():
     for r in debias_results:
         print(r)
     
-    print("\n=== Per-Profession Sense 1 Debias ===")
+    print("\n=== Per-Profession Sense 7 Debias ===")
     
     rows = ex.per_profession_debias_sense(
         professions=professions,
         templates=templates,
-        sense_idx=1,
+        sense_idx=7,
         male_word="il",
         female_word="elle"
     )
