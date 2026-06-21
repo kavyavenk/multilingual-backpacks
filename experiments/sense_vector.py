@@ -456,6 +456,13 @@ def load_model(out_dir, device):
 
     if model_type == "backpack" or any(k.startswith("sense_layer") for k in state.keys()):
         print("Detected BackpackLM")
+        if any(k.startswith("sense_predictor") for k in state.keys()):
+            print("Detected sense_predictor architecture")
+            config.use_sense_predictor = True
+        elif any(k.startswith("sense_attention") for k in state.keys()):
+            print("Detected sense_attention architecture")
+            config.use_sense_predictor = False
+        
         model = BackpackLM(config)
     else:
         print("Detected StandardTransformerLM")
