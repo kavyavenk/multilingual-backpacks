@@ -624,17 +624,11 @@ def main():
         "Hier, la {profession} a dit qu'",
         "La {profession} m'a dit qu'",
     ]
-
+    '''
     prompts = [
         template.format(profession=profession)
         for profession in professions
         for template in templates
-    ]
-    
-    '''
-    prompts = [
-        f"The {profession} said that"
-        for profession in professions
     ]
     
 
