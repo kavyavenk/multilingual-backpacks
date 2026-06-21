@@ -576,7 +576,7 @@ def main():
     print("\n=== Bias Score Test ===")
 
 
-    
+    '''
     professions = [
         "mechanic", "accountant", "farmer", "baker", "assistant", "construction",
         "guard", "carpenter", "analyst", "physician", "cook", "clerk",
@@ -595,11 +595,11 @@ def main():
         "The {profession} told me that",
     ]
     
-    '''
+    
     for w in ["il", "elle", " il", " elle"]:
         ids = tokenizer.encode(w, add_special_tokens=False)
         print(w, ids, tokenizer.convert_ids_to_tokens(ids))
-    
+    '''
     
     professions = [
     "médecin",
@@ -624,7 +624,7 @@ def main():
         "Hier, la {profession} a dit qu'",
         "La {profession} m'a dit qu'",
     ]
-    '''
+    
     prompts = [
         template.format(profession=profession)
         for profession in professions
@@ -634,8 +634,8 @@ def main():
 
     avg_bias = ex.bias_score(
         prompts,
-        male_word=" he",
-        female_word=" she"
+        male_word="il",
+        female_word="elle"
     )
 
     print("AVERAGE BIAS SCORE:", avg_bias)
@@ -657,8 +657,8 @@ def main():
         projected_bias = ex.transformer_nullspace_bias_score(
             prompts=prompts,
             target_words=professions,
-            male_word=" he",
-            female_word=" she"
+            male_word="il",
+            female_word="elle"
         )
     
         print("TRANSFORMER NULLSPACE BIAS SCORE:", projected_bias)
@@ -668,8 +668,8 @@ def main():
     baseline, debias_results = ex.sweep_debias_senses(
         prompts=prompts,
         target_words=professions,
-        male_word=" he",
-        female_word=" she"
+        male_word="il",
+        female_word="elle"
     )
     
     print("BASELINE:", baseline)
@@ -683,8 +683,8 @@ def main():
         professions=professions,
         templates=templates,
         sense_idx=1,
-        male_word=" he",
-        female_word=" she"
+        male_word="il",
+        female_word="elle"
     )
     
     for row in rows:
