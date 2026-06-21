@@ -151,7 +151,7 @@ def main():
     elif args.init_from == 'resume':
         # Load checkpoint
         print("About to load ckpt")
-        ckpt_path = os.path.join(args.out_dir, 'june_ckpt.pt')
+        ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
         print("Loading ckpt")
         with torch.serialization.safe_globals([configurator.ModelConfig]):
             checkpoint = torch.load(ckpt_path, map_location=args.device)
