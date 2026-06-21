@@ -166,6 +166,11 @@ def main():
             model = StandardTransformerLM(config)
         else:
             model = BackpackLM(config)
+
+        model.load_state_dict(checkpoint["model"], strict=True)
+
+        iter_num = checkpoint["iter_num"]
+        best_val_loss = checkpoint["best_val_loss"]
     elif args.init_from == 'backpack-small':
         # Load pretrained Backpack model (if available)
         print("Loading pretrained Backpack")
