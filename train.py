@@ -24,7 +24,7 @@ import configurator
 from configurator import ModelConfig, get_config
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-g_drive_model_path = "/content/drive/MyDrive/best_model_weights.pt"
+g_drive_model_path = "/content/drive/MyDrive/multilingual-backpacks-checkpoints_real/backpack_full/june_best_model_weights.pt"
 
 # Optional import for BackpackTokenizer (only needed for pretrained models)
 try:
