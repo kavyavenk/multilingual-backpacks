@@ -76,7 +76,7 @@ def main():
     print(f"Device: {device}")
 
     models = {
-        "backpack":"/content/drive/MyDrive/multilingual-backpacks-checkpoints_real/backpack_full",
+        "backpack":"/content/drive/MyDrive/multilingual-backpacks-checkpoints_real/backpack_full/june_ckpt",
         "transformer": "/content/drive/MyDrive/multilingual-backpacks-checkpoints-real/transformer_ckpt_corrected",
     }
     selected = [m.strip() for m in args.models.split(",") if m.strip()]
