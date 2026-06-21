@@ -154,9 +154,9 @@ def main():
         ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
         print("Loading ckpt")
         with torch.serialization.safe_globals([configurator.ModelConfig]):
-        checkpoint = torch.load(ckpt_path, map_location=args.device)
+            checkpoint = torch.load(ckpt_path, map_location=args.device)
 
-        config = checkpoint["config"]   # ADD THIS
+        config = checkpoint["config"]
         config.device = args.device
         config.dtype = args.dtype
         config.compile = args.compile
