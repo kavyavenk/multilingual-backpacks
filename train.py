@@ -132,7 +132,7 @@ def main():
     print("Initializing model...")
     
     # Check if this is a transformer baseline config
-    is_transformer_baseline = 'transformer_baseline' in args.config or 'transformer' in args.config.lower()
+    is_transformer_baseline = args.model_type == "transformer"
     
     if args.init_from == 'scratch':
         if is_transformer_baseline:
@@ -154,15 +154,18 @@ def main():
         ckpt_path = os.path.join(args.out_dir, 'ckpt.pt')
         print("Loading ckpt")
         with torch.serialization.safe_globals([configurator.ModelConfig]):
-            checkpoint = torch.load(ckpt_path, map_location=args.device)
+        checkpoint = torch.load(ckpt_path, map_location=args.device)
+
+        config = checkpoint["config"]   # ADD THIS
+        config.device = args.device
+        config.dtype = args.dtype
+        config.compile = args.compile
+        config.vocab_size = meta["vocab_size"]
+    
         if is_transformer_baseline:
             model = StandardTransformerLM(config)
         else:
             model = BackpackLM(config)
-        # Move model to device BEFORE loading state dict to avoid device mismatch
-        model.to(args.device)
-        model.load_state_dict(checkpoint['model'])
-        print(f"Resumed from checkpoint at iteration {checkpoint.get('iter_num', 0)}")
     elif args.init_from == 'backpack-small':
         # Load pretrained Backpack model (if available)
         print("Loading pretrained Backpack")
