@@ -665,8 +665,7 @@ def _is_english_or_french(token_str):
         # Filter it out
         return False
     
-    # Additional aggressive filter: Check for common non-English/French word endings/patterns
-    # These patterns are common in other European languages
+    # Additional filter: Check for common non-English/French word endings/patterns
     suspicious_endings = [
         r'czy$',  # Polish question word
         r'jer$',  # Common in Slavic languages
@@ -701,8 +700,8 @@ def _is_english_or_french(token_str):
         if token_str.lower() not in common_short_en_fr and not token_str.isalpha():
             return False
     
-    # Final check: Filter out tokens with suspicious patterns that indicate other languages
-    # Extended blacklist of non-English/French tokens found in analysis
+    # Final check: Filter out tokens with patterns that indicate other languages
+    # Extended list of non-English/French tokens found in analysis
     additional_non_en_fr = {
         'shakl', 'pontos', 'effettua', 'waarvoor', 'xiquet', 'ança', 'IRMA',
         'tahimik', 'Barry', 'tavad', 'Hij', 'Race', 'Dhawa', 'oppdage',
@@ -796,7 +795,7 @@ def _is_english_or_french(token_str):
 
 def _filter_meaningful_tokens(token_str, min_prob=0.001):
     """
-    Filter out garbage/meaningless tokens from predictions.
+    Filter out meaningless tokens from predictions.
     
     Filters out:
     - Special tokens (<|lang_sep|>, <pad>, <unk>, <s>, </s>, etc.)
@@ -883,7 +882,7 @@ def _filter_meaningful_tokens(token_str, min_prob=0.001):
 def analyze_sense_vectors(model, tokenizer, words, device, top_k=5, verbose=True, filter_tokens=True, 
                           analyze_relatedness=True, analyze_syntax=True):
     """
-    Improved sense vector analysis with probabilities, quantitative metrics, and better visualization.
+    Improved sense vector analysis with probabilities, quantitative metrics, and better visualizations
     
     Features:
     - Shows probabilities with predictions
@@ -1106,7 +1105,7 @@ def analyze_sense_vectors(model, tokenizer, words, device, top_k=5, verbose=True
                             if not _filter_meaningful_tokens(token_str):
                                 continue
                             
-                            # CRITICAL: Filter to English/French only - remove all other languages
+                            # Filter to English/French only, remove all other languages
                             # This is the most important check - must pass before adding
                             if not _is_english_or_french(token_str):
                                 continue
@@ -1128,7 +1127,7 @@ def analyze_sense_vectors(model, tokenizer, words, device, top_k=5, verbose=True
                                 if not re.search(r'[a-zA-ZàâäçèéêëîïôùûüÿÀÂÄÇÈÉÊËÎÏÔÙÛÜŸ]', token_str_clean):
                                     continue
                             
-                            # All checks passed - add to results
+                            # All checks passed, add to results
                             seen_words.add(token_str_lower)
                             related_words.append((token_str_clean, sim))
                             if len(related_words) >= 10:  # Stop once we have enough
@@ -1410,7 +1409,7 @@ def analyze_cross_lingual_sense_alignment(model, tokenizer, word_pairs, device, 
 
 
 # Expected performance benchmarks for MultiSimLex
-# Based on published results from Vulic et al. (2020) and other baselines
+# Based on published results from Vulic et al. (2020)
 MULTISIMLEX_BENCHMARKS = {
     'en': {
         'excellent': 0.70,  # Strong multilingual models (XLM-R, mBERT)
@@ -2072,7 +2071,7 @@ def evaluate_multisimlex(
             "skipped_pairs": skipped_pairs,
             "error": "Fewer than 2 valid word pairs evaluated.",
         }
-    print("\n=== Top 4 Model Similarities ===")
+    print("\n Top 4 Model Similarities")
     for w1, w2, sim, human in sorted(
             all_pairs,
             key=lambda x: x[2],
@@ -2094,7 +2093,7 @@ def evaluate_multisimlex(
         )[:4]:
         print(f"{w1:20s} {w2:20s} model={sim:.4f} human={human:.4f}")
 
-    print("\n=== Lowest Human Scores ===")
+    print("\n Lowest Human Scores")
     for w1, w2, sim, human in sorted(
             all_pairs,
             key=lambda x: x[3]
@@ -2602,7 +2601,7 @@ def _generate_translation_sense_retrieval(model, tokenizer, source_text, device,
     """
     Generate translation using improved sense vector retrieval with context awareness.
     
-    Improved approach:
+    Approach:
     1. Expanded dictionary with Europarl-specific terms
     2. Phrase-level matching (2-3 word phrases)
     3. Context-aware word translation
@@ -2971,7 +2970,7 @@ def _generate_translation_sense_retrieval(model, tokenizer, source_text, device,
     source_lower = source_text.lower().strip()
     source_normalized = ' '.join(source_lower.split())  # Normalize whitespace
     
-    # Check exact match in dictionary first (fastest)
+    # Check exact match in dictionary first
     if source_normalized in common_translations:
         result = common_translations[source_normalized]
         # Capitalize first letter if source was capitalized
@@ -2979,7 +2978,7 @@ def _generate_translation_sense_retrieval(model, tokenizer, source_text, device,
             result = result[0].upper() + result[1:] if result else result
         return result
     
-    # Try phrase-level matching (check longer phrases first, 4-word down to 2-word)
+    # Try phrase-level matching (check longer phrases first)
     words = source_normalized.split()
     if len(words) >= 2:
         # Try matching phrases from longest to shortest
@@ -3017,17 +3016,17 @@ def _generate_translation_sense_retrieval(model, tokenizer, source_text, device,
     if len(source_words) == 0:
         return ""
     
-    # Get vocab_size first to ensure we clamp properly
+    # Get vocab_size
     vocab_size = model.config.vocab_size
     
-    # Get sense vectors for all source words at once (more efficient)
+    # Get sense vectors for all source words at once
     word_reprs = get_word_representations(model, tokenizer, source_words, device)
     
     translated_words = []
     
     # Use much larger vocabulary sample for better coverage
-    # Prioritize common tokens (first 150k tokens are usually most common)
-    # Then sample randomly from the rest - INCREASED for better BLEU
+    # Prioritize common tokens
+    # Then sample randomly from the rest
     common_size = min(150000, vocab_size)
     remaining_size = min(350000, max(0, vocab_size - common_size))
     
@@ -3139,7 +3138,7 @@ def _generate_translation_sense_retrieval(model, tokenizer, source_text, device,
         best_non_french_word = None
         best_non_french_sim = -1.0
         
-        # Minimum similarity threshold (lowered to 0.25 to get more matches - critical for BLEU improvement)
+        # Minimum similarity threshold (lowered to 0.25 to get more matches)
         min_sim_threshold = 0.25
         
         for sim, idx in zip(top_sims, top_indices):
@@ -3384,7 +3383,7 @@ def evaluate_translation_bleu(model, tokenizer, test_pairs, device, max_samples=
     print(f"  Min BLEU: {np.min(bleu_scores):.4f}")
     print(f"  Max BLEU: {np.max(bleu_scores):.4f}")
     
-    # Note: If sacrebleu is not available, fallback BLEU calculation is used silently
+    # Note: If sacrebleu is not available, fallback BLEU calculation used silently
     
     return {
         'n_pairs': len(bleu_scores),
@@ -3664,7 +3663,7 @@ def evaluate_translation_accuracy(model, tokenizer, test_pairs, device, max_samp
                 word_overlap = len(ref_words & gen_words) / len(ref_words)
                 word_accuracies.append(word_overlap)
             
-            # Debug: Store first few examples (especially short ones that should match)
+            # Store first few examples (esp short ones that should match)
             if len(debug_examples) < 10 and (i < 10 or len(target_text.split()) <= 3):
                 debug_examples.append({
                     'source': source_text,
@@ -3779,7 +3778,7 @@ def main():
                 else:
                     print(f"{key.upper()}: {result['spearman']:.4f}")
         
-    print("\n=== Sense Diversity Check ===")
+    print("\n Sense Diversity Check")
 
     word = "bank"
     
@@ -3801,7 +3800,7 @@ def main():
 
             print(f"sense {i} vs {j}: {sim:.4f}")
     
-    print("\n=== Word-level Evaluation ===")
+    print("\n Word-level Evaluation")
     
     # Test words in both languages
     test_words_en = ['hello', 'world', 'language', 'model', 'learning']
@@ -3818,7 +3817,7 @@ def main():
         print(f"  {word}: shape {repr.shape}")
     
     # Analyze sense vectors
-    print("\n=== Sense Vector Analysis ===")
+    print("\n Sense Vector Analysis")
     print("\nAnalyzing English words:")
     en_senses = analyze_sense_vectors(model, tokenizer, test_words_en[:3], device)
     for word, predictions in en_senses.items():
@@ -3833,8 +3832,8 @@ def main():
         for sense_idx, preds in enumerate(predictions):
             print(f"  Sense {sense_idx}: {preds}")
     
-    # Evaluate cross-lingual similarity (using MultiSimLex function)
-    print("\n=== Cross-lingual Word Similarity ===")
+    # Evaluate cross-lingual similarity using MultiSimLex
+    print("\n Cross-lingual Word Similarity")
     translation_pairs = [
         ('hello', 'bonjour'),
         ('world', 'monde'),
@@ -3854,7 +3853,7 @@ def main():
         print(f"  {word1} <-> {word2}: {cos_sim:.4f}")
     
     # Sentence-level evaluation
-    print("\n=== Sentence-level Evaluation ===")
+    print("\n Sentence-level Evaluation")
     test_sentences_en = [
         "Hello, how are you?",
         "The language model is learning.",
@@ -3877,7 +3876,7 @@ def main():
         print(f"  {sent}: shape {repr.shape}")
     
     # Cross-lingual sentence similarity
-    print("\n=== Cross-lingual Sentence Similarity ===")
+    print("\n Cross-lingual Sentence Similarity")
     sentence_pairs = list(zip(test_sentences_en, test_sentences_fr))
     sent_similarities = evaluate_sentence_similarity(model, tokenizer, sentence_pairs, device)
     print("\nTranslation pair sentence similarities:")
