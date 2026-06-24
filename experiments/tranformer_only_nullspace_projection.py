@@ -127,7 +127,7 @@ def main():
         for template in templates
     ]
 
-    print("=== Tokenization check ===")
+    print("Tokenization check")
     for w in ["il", "elle", " il", " elle"]:
         ids = tokenizer.encode(w, add_special_tokens=False)
         print(repr(w), ids, tokenizer.convert_ids_to_tokens(ids))
