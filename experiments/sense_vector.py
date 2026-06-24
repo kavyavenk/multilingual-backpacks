@@ -514,7 +514,7 @@ def main():
     ex = SenseVectorExperiment(model, tokenizer, device)
     
     # Test words
-    print("\n=== English Word Sense Analysis ===")
+    print("\n English Word Sense Analysis")
     english_words = [' hello', ' world', ' language', ' model', ' learning']
     for word in english_words:
         print(f"\n# {word}")
@@ -522,7 +522,7 @@ def main():
         for sense_idx, preds in enumerate(predictions):
             print(f"Sense {sense_idx}: {preds}")
     
-    print("\n=== French Word Sense Analysis ===")
+    print("\n French Word Sense Analysis")
     french_words = [' bonjour', ' monde', ' langue', ' modèle', ' apprentissage']
     for word in french_words:
         print(f"\n# {word}")
@@ -531,7 +531,7 @@ def main():
             print(f"Sense {sense_idx}: {preds}")
     
     # Multilingual analysis
-    print("\n=== Multilingual Sense Comparison ===")
+    print("\n Multilingual Sense Comparison")
     translation_pairs = [
         ('hello', 'bonjour'),
         ('world', 'monde'),
@@ -549,7 +549,7 @@ def main():
         for sense_idx, preds in enumerate(results['fr']):
             print(f"    Sense {sense_idx}: {preds}")
 
-    print("\n=== Sweep Sense Ablation ===")
+    print("\n Sense Ablation Iterative")
 
     results = ex.sweep_ablate_senses(
         prompt="bonjour",
@@ -563,7 +563,7 @@ def main():
     )
     
     '''
-    print("\n=== Pronoun Tokenization Check ===")
+    print("\n Pronoun Tokenization Check")
 
     for w in ["il", " il", "elle", " elle"]:
         ids = tokenizer.encode(w, add_special_tokens=False)
@@ -573,7 +573,7 @@ def main():
             [tokenizer.decode([i]) for i in ids]
         )
     '''
-    print("\n=== Bias Score Test ===")
+    print("\n Bias Score Test")
 
 
     '''
@@ -638,7 +638,7 @@ def main():
         female_word="elle"
     )
 
-    print("AVERAGE BIAS SCORE:", avg_bias)
+    print("Average Bias Score:", avg_bias)
     
 
     
@@ -652,7 +652,7 @@ def main():
     
 
     if hasattr(model, "token_embeddings") and not hasattr(model, "sense_layer"):
-        print("\n=== Transformer Nullspace Projection Bias Score ===")
+        print("\n Transformer Nullspace Projection Bias Score")
     
         projected_bias = ex.transformer_nullspace_bias_score(
             prompts=prompts,
@@ -661,9 +661,9 @@ def main():
             female_word="elle"
         )
     
-        print("TRANSFORMER NULLSPACE BIAS SCORE:", projected_bias)
+        print("Transformer Nullspace Bias Score:", projected_bias)
 
-    print("\n=== Debias Sense Sweep ===")
+    print("\n Debias Sense Sweep")
 
     baseline, debias_results = ex.sweep_debias_senses(
         prompts=prompts,
@@ -672,12 +672,12 @@ def main():
         female_word="elle"
     )
     
-    print("BASELINE:", baseline)
+    print("Baseline:", baseline)
     
     for r in debias_results:
         print(r)
     
-    print("\n=== Per-Profession Sense 7 Debias ===")
+    print("\n Per-Profession Sense 7 Debias")
     
     rows = ex.per_profession_debias_sense(
         professions=professions,
