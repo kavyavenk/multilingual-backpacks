@@ -267,7 +267,7 @@ python verify_evaluation.py --out_dir out/backpack_full
 
 **Expected Output:**
 ```
-✅ ALL CHECKS PASSED - READY FOR PAPER REPORTING
+ALL CHECKS PASSED
 ```
 
 ### Manual Verification Steps
@@ -284,11 +284,11 @@ tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
 
 # Check sense labels exist
 assert len(SENSE_LABELS) == 16, f'Expected 16 sense labels, got {len(SENSE_LABELS)}'
-print('✅ All 16 sense labels defined')
+print('All 16 sense labels defined')
 
 # Check they appear in output
 results = analyze_sense_vectors(model, tokenizer, ['hello'], 'cpu', verbose=True)
-print('✅ Sense labels displayed in output')
+print('Sense labels displayed in output')
 "
 ```
 
@@ -303,7 +303,7 @@ model, _ = load_model('out/backpack_full', 'cpu')
 tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
 
 results = analyze_sense_vectors(model, tokenizer, ['hello'], 'cpu', verbose=True)
-print('✅ Check output - should only show English/French words')
+print('Check output, should only show English/French words')
 "
 ```
 
@@ -383,7 +383,7 @@ python train.py \
 ### 2. Standard Transformer Baseline (Scratch Training)
 
 - **Model**: `StandardTransformerLM` - a standard transformer language model
-- **Architecture**: Identical to Backpack model EXCEPT:
+- **Architecture**: Identical to Backpack model except:
   - Uses regular token embeddings (not sense embeddings)
   - No sense predictor network
   - No weighted combination of sense vectors
@@ -434,20 +434,6 @@ python evaluate.py \
     --cross_lingual \
     --languages en fr
 ```
-
----
-
-### Key Findings
-
-1. **Backpack significantly outperforms Transformer** (4x better across all metrics)
-2. **Training converged excellently** (98k iterations, loss 2.80)
-3. **Character accuracy excellent** (59.1%, exceeds target)
-4. **Sense vectors interpretable** (16 labeled senses, 0.85 cross-lingual alignment)
-5. **Translation generation working** (sense retrieval approach)
-
-**Key Achievement**: Backpack model demonstrates significant improvement over Transformer baseline, with interpretable sense vectors and strong cross-lingual alignment (0.85 similarity).
-
----
 
 ## References
 
