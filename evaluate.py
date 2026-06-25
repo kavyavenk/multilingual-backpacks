@@ -1916,11 +1916,6 @@ def evaluate_multisimlex(
     df["human_score"] = pd.to_numeric(df["human_score"], errors="coerce")
     df = df.dropna(subset=["human_score"])
 
-    # Optional: remove rows with no usable human judgment.
-    # In your screenshot, 0.0 appears often; keep it unless you confirm
-    # that 0 means missing rather than "not similar".
-    # df = df[df["human_score"] > 0]
-
     if max_samples is not None:
         df = df.head(max_samples)
 
