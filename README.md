@@ -437,7 +437,7 @@ python evaluate.py \
 
 ## References
 
-- nanoBackpackLM: https://github.com/SwordElucidator/nanoBackpackLM
-- Backpack Language Models paper
+- nanoBackpackLM repository: https://github.com/SwordElucidator/nanoBackpackLM
+- Backpack Language Models paper repository: https://github.com/john-hewitt/backpacks-flash-attn
 - XLM-RoBERTa: https://huggingface.co/xlm-roberta-base
-- MultiSimLex: Multilingual word similarity benchmark
+- MultiSimLex: Multilingual word similarity benchmark https://aclanthology.org/2020.cl-4.5/
