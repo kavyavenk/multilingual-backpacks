@@ -439,6 +439,5 @@ python evaluate.py \
 
 - nanoBackpackLM repository: https://github.com/SwordElucidator/nanoBackpackLM
 - Backpack Language Models paper repository: https://github.com/john-hewitt/backpacks-flash-attn
-- Clément Adandé's repo on Backpack models examining French-English polysemy: https://github.com/clemsadand/multilingual-backpack-lm
 - XLM-RoBERTa: https://huggingface.co/xlm-roberta-base
 - MultiSimLex: Multilingual word similarity benchmark https://aclanthology.org/2020.cl-4.5/
