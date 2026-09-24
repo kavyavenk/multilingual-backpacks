@@ -208,12 +208,6 @@ def load_model(out_dir_or_file, device):
             sense_weighting = getattr(config, 'sense_weighting', 'attention')
         print(f"Loading BackpackLM model (sense_weighting={sense_weighting})...")
         model = BackpackLM(config)
-    if args.ablate_sense is not None:
-    if isinstance(model, BackpackLM):
-        print(f"Ablating sense {args.ablate_sense}")
-        ablate_sense(model, args.ablate_sense)
-    else:
-        print("Transformer: no sense ablation")
     
     model.load_state_dict(checkpoint['model'])
     model.to(device)
@@ -3767,6 +3761,14 @@ def main():
     # Load model
     print(f"Loading model from {args.out_dir}...")
     model, config = load_model(args.out_dir, device)
+
+    if args.ablate_sense is not None:
+        if isinstance(model, BackpackLM):
+            print(f"Ablating sense {args.ablate_sense}")
+            ablate_sense(model, args.ablate_sense)
+        else:
+            print("Transformer: no sense ablation")
+        
     
     # Load tokenizer
     from transformers import AutoTokenizer
