@@ -27,15 +27,43 @@ def pick_device(requested):
         return "mps"
     return "cpu"
 
+def ablate_sense(model, sense_idx):
+    old_forward = model.sense_layer.forward
 
+    def patched_forward(token_embs):
+        out = old_forward(token_embs)
 
-def eval_model(name, path, device, data_dir):
+        B, T, _ = out.shape
+
+        # [B, T, n_senses * n_embd]
+        # -> [B, T, n_senses, n_embd]
+        out = out.view(
+            B, T,
+            model.n_senses,
+            model.config.n_embd
+        )
+
+        # zero this sense for every token
+        out[:, :, sense_idx, :] = 0.0
+
+        return out.view(
+            B, T,
+            model.n_senses * model.config.n_embd
+        )
+
+    model.sense_layer.forward = patched_forward
+
+def eval_model(name, path, device, data_dir, ablate_sense_idx=None):
     print(f"\n{'='*70}\nEVALUATING: {name}\n{'='*70}")
     t0 = time.time()
     model, config = load_model(path, device)
     params = sum(p.numel() for p in model.parameters())
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+
+    if name == "backpack" and ablate_sense_idx is not None:
+        print(f"Ablating sense {ablate_sense_idx}")
+        ablate_sense(model, ablate_sense_idx)
 
     results = {
     "model_name": name,
@@ -70,6 +98,8 @@ def main():
     parser.add_argument("--models", default="backpack,transformer",
                         help="Comma-separated: backpack, transformer")
     parser.add_argument("--out", default="out/ckpt_eval_results.json")
+    parser.add_argument("--ablate_sense", type=int, default=None)
+    
     args = parser.parse_args()
 
     device = pick_device(args.device)
@@ -88,7 +118,11 @@ def main():
             print(f"Skipping {name}: no ckpt at {path}")
             continue
         all_results[name] = eval_model(
-            name, path, device, args.data_dir
+            name,
+            path,
+            device,
+            args.data_dir,
+            args.ablate_sense
         )
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
