@@ -16,6 +16,32 @@ from configurator import ModelConfig
 
 SENSE_LABELS = {i: f"Sense {i}" for i in range(64)}
 
+
+def ablate_sense(model, sense_idx):
+    if not isinstance(model, BackpackLM):
+        return
+
+    old_forward = model.sense_layer.forward
+
+    def patched_forward(token_embs):
+        out = old_forward(token_embs)
+
+        B, T, _ = out.shape
+        out = out.view(
+            B, T,
+            model.n_senses,
+            model.config.n_embd
+        )
+
+        out[:, :, sense_idx, :] = 0.0
+
+        return out.view(
+            B, T,
+            model.n_senses * model.config.n_embd
+        )
+
+    model.sense_layer.forward = patched_forward
+
 def load_huggingface_model(model_name, device):
     """
     Load a HuggingFace Backpack model (e.g., stanfordnlp/backpack-gpt2).
@@ -182,6 +208,12 @@ def load_model(out_dir_or_file, device):
             sense_weighting = getattr(config, 'sense_weighting', 'attention')
         print(f"Loading BackpackLM model (sense_weighting={sense_weighting})...")
         model = BackpackLM(config)
+    if args.ablate_sense is not None:
+    if isinstance(model, BackpackLM):
+        print(f"Ablating sense {args.ablate_sense}")
+        ablate_sense(model, args.ablate_sense)
+    else:
+        print("Transformer: no sense ablation")
     
     model.load_state_dict(checkpoint['model'])
     model.to(device)
@@ -3717,6 +3749,7 @@ def main():
     parser.add_argument('--multisimlex', action='store_true', help='Run MultiSimLex evaluation')
     parser.add_argument('--languages', nargs='+', default=['en', 'fr'], help='Languages for MultiSimLex evaluation')
     parser.add_argument('--cross_lingual', action='store_true', help='Run cross-lingual MultiSimLex evaluation')
+    parser.add_argument("--ablate_sense", type=int, default=None)
     parser.add_argument(
     "--multisimlex_dir",
     type=str,
