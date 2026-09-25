@@ -3792,6 +3792,8 @@ def main():
 )
     
     args = parser.parse_args()
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
     
     device = args.device
     if device == 'cuda' and not torch.cuda.is_available():
@@ -3808,6 +3810,7 @@ def main():
             ablate_sense(model, args.ablate_sense)
         else:
             print("Transformer: no sense ablation")
+    
         
     if args.project and isinstance(model, StandardTransformerLM):
 
@@ -3830,10 +3833,7 @@ def main():
             male_word="he",
             female_word="she"
         )
-    # Load tokenizer
-    from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
-
+    
      # MultiSimLex evaluation
     if args.multisimlex:
         results = {}
