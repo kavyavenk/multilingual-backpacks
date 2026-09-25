@@ -103,19 +103,20 @@ def eval_model(name, path, device, data_dir,
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     if name == "transformer" and project:
-    professions = [
-        "médecin",
-        "analyste",
-        "bibliothécaire",
-        "comptable",
-        "designer",
-        "manager",
-        "réceptionniste",
-        "secrétaire",
-    ]
+        professions = [
+            "médecin",
+            "analyste",
+            "bibliothécaire",
+            "comptable",
+            "designer",
+            "manager",
+            "réceptionniste",
+            "secrétaire",
+        ]
 
-    print("Applying transformer gender projection")
-    project_transformer(model, tokenizer, professions)
+        print("Applying transformer gender projection")
+        project_transformer(model, tokenizer, professions)
+        
     if name == "backpack" and ablate_sense_idx is not None:
         print(f"Ablating sense {ablate_sense_idx}")
         ablate_sense(model, ablate_sense_idx)
@@ -178,8 +179,8 @@ def main():
             path,
             device,
             args.data_dir,
-            args.ablate_sense
-           args.project
+            args.ablate_sense,
+            args.project
         )
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
