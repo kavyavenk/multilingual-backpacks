@@ -158,7 +158,7 @@ def eval_model(name, path, device, data_dir,
         ]
         '''
 
-        print("Applying transformer gender projection")
+        print("Applying transformer gender projection fr")
         project_transformer(model, tokenizer, professions)
         
     if name == "backpack" and ablate_sense_idx is not None:
