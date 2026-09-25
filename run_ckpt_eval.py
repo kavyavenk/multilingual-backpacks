@@ -53,10 +53,8 @@ def ablate_sense(model, sense_idx):
 
     model.sense_layer.forward = patched_forward
 
-def project_transformer(model, tokenizer, professions,
+def project_transformer(model, tokenizer, professions=None,
                         male_word="he", female_word="she"):
-
-    old_forward = model.token_embeddings.forward
 
     male_id = tokenizer.encode(
         male_word, add_special_tokens=False
@@ -67,32 +65,14 @@ def project_transformer(model, tokenizer, professions,
 
     with torch.no_grad():
         E = model.token_embeddings.weight
+
+        # gender direction
         g = E[male_id] - E[female_id]
         g = g / (g.norm() + 1e-12)
 
-    target_ids = []
-    for word in professions:
-        target_ids.extend(
-            tokenizer.encode(word, add_special_tokens=False)
-        )
-    target_ids = list(set(target_ids))
-
-    def patched_forward(input_ids):
-        emb = old_forward(input_ids)
-
-        mask = torch.zeros_like(input_ids, dtype=torch.bool)
-
-        for tok_id in target_ids:
-            mask |= input_ids == tok_id
-
-        if mask.any():
-            selected = emb[mask]
-            projection = (selected @ g).unsqueeze(-1) * g
-            emb[mask] = selected - projection
-
-        return emb
-
-    model.token_embeddings.forward = patched_forward
+        # remove gender direction from every vocab embedding
+        projection = (E @ g).unsqueeze(-1) * g
+        E.sub_(projection)
 
 def eval_model(name, path, device, data_dir,
                ablate_sense_idx=None, project=False):    
@@ -103,61 +83,6 @@ def eval_model(name, path, device, data_dir,
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     if name == "transformer" and project:
-        '''
-        professions = [
-            "médecin",
-            "analyste",
-            "bibliothécaire",
-            "comptable",
-            "designer",
-            "manager",
-            "réceptionniste",
-            "secrétaire",
-        ]
-        '''
-        professions = [
-            "mechanic",
-            "accountant",
-            "farmer",
-            "baker",
-            "assistant",
-            "construction",
-            "guard",
-            "carpenter",
-            "analyst",
-            "physician",
-            "cook",
-            "clerk",
-            "manager",
-            "developer",
-            "librarian",
-            "salesperson",
-            "mover",
-            "hairdresser",
-            "auditor",
-            "sheriff",
-            "janitor",
-            "driver",
-            "chief",
-            "teacher",
-            "writer",
-            "receptionist",
-            "CEO",
-            "nurse",
-            "housekeeper",
-            "secretary",
-            "counselor",
-            "attendant",
-            "supervisor",
-            "designer",
-            "lawyer",
-            "editor",
-            "cashier",
-            "laborer",
-            "tailor",
-            "cleaner",
-        ]
-
         print("Applying transformer gender projection en")
         project_transformer(model, tokenizer, professions)
         
