@@ -3813,7 +3813,7 @@ def main():
     
         
     if args.project and isinstance(model, StandardTransformerLM):
-
+        '''
         professions = [
             "mechanic", "accountant", "farmer", "baker", "assistant",
             "construction", "guard", "carpenter", "analyst", "physician",
@@ -3824,14 +3824,25 @@ def main():
             "counselor", "attendant", "supervisor", "designer", "lawyer",
             "editor", "cashier", "laborer", "tailor", "cleaner",
         ]
+        '''
+        professions = [
+            "médecin",
+            "analyste",
+            "bibliothécaire",
+            "comptable",
+            "designer",
+            "manager",
+            "réceptionniste",
+            "secrétaire",
+        ]
     
         print("Applying transformer nullspace projection")
         project_transformer(
             model,
             tokenizer,
             professions,
-            male_word="he",
-            female_word="she"
+            male_word="il",
+            female_word="elle"
         )
     
      # MultiSimLex evaluation
