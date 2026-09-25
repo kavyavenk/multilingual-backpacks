@@ -63,7 +63,6 @@ def project_transformer(model, tokenizer, professions=None,
         projection = (E @ g).unsqueeze(-1) * g
         E.sub_(projection)
 
-    model.token_embeddings.forward = patched_forward
 
 def load_huggingface_model(model_name, device):
     """
@@ -3799,34 +3798,12 @@ def main():
     
         
     if args.project and isinstance(model, StandardTransformerLM):
-        '''
-        professions = [
-            "mechanic", "accountant", "farmer", "baker", "assistant",
-            "construction", "guard", "carpenter", "analyst", "physician",
-            "cook", "clerk", "manager", "developer", "librarian",
-            "salesperson", "mover", "hairdresser", "auditor", "sheriff",
-            "janitor", "driver", "chief", "teacher", "writer",
-            "receptionist", "CEO", "nurse", "housekeeper", "secretary",
-            "counselor", "attendant", "supervisor", "designer", "lawyer",
-            "editor", "cashier", "laborer", "tailor", "cleaner",
-        ]
-        '''
-        professions = [
-            "médecin",
-            "analyste",
-            "bibliothécaire",
-            "comptable",
-            "designer",
-            "manager",
-            "réceptionniste",
-            "secrétaire",
-        ]
     
-        print("Applying transformer nullspace projection fr")
+    
+        print("Applying transformer nullspace projection fr full")
         project_transformer(
             model,
             tokenizer,
-            professions,
             male_word="il",
             female_word="elle"
         )
