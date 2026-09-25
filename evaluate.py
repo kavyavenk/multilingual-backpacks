@@ -3836,7 +3836,7 @@ def main():
             "secrétaire",
         ]
     
-        print("Applying transformer nullspace projection")
+        print("Applying transformer nullspace projection fr")
         project_transformer(
             model,
             tokenizer,
