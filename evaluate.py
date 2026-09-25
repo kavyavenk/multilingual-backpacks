@@ -42,6 +42,43 @@ def ablate_sense(model, sense_idx):
 
     model.sense_layer.forward = patched_forward
 
+def project_transformer(model, tokenizer, professions,
+                        male_word="il", female_word="elle"):
+
+    old_forward = model.token_embeddings.forward
+
+    male_id = tokenizer.encode(male_word, add_special_tokens=False)[0]
+    female_id = tokenizer.encode(female_word, add_special_tokens=False)[0]
+
+    with torch.no_grad():
+        E = model.token_embeddings.weight
+        g = E[male_id] - E[female_id]
+        g = g / (g.norm() + 1e-12)
+
+    target_ids = []
+    for word in professions:
+        target_ids.extend(
+            tokenizer.encode(word, add_special_tokens=False)
+        )
+    target_ids = list(set(target_ids))
+
+    def patched_forward(input_ids):
+        emb = old_forward(input_ids)
+
+        mask = torch.zeros_like(input_ids, dtype=torch.bool)
+
+        for tok_id in target_ids:
+            mask |= input_ids == tok_id
+
+        if mask.any():
+            selected = emb[mask]
+            projection = (selected @ g).unsqueeze(-1) * g
+            emb[mask] = selected - projection
+
+        return emb
+
+    model.token_embeddings.forward = patched_forward
+
 def load_huggingface_model(model_name, device):
     """
     Load a HuggingFace Backpack model (e.g., stanfordnlp/backpack-gpt2).
@@ -214,6 +251,28 @@ def load_model(out_dir_or_file, device):
     model.eval()
     
     return model, config
+
+if args.project and isinstance(model, StandardTransformerLM):
+
+    professions = [
+        "mechanic", "accountant", "farmer", "baker", "assistant",
+        "construction", "guard", "carpenter", "analyst", "physician",
+        "cook", "clerk", "manager", "developer", "librarian",
+        "salesperson", "mover", "hairdresser", "auditor", "sheriff",
+        "janitor", "driver", "chief", "teacher", "writer",
+        "receptionist", "CEO", "nurse", "housekeeper", "secretary",
+        "counselor", "attendant", "supervisor", "designer", "lawyer",
+        "editor", "cashier", "laborer", "tailor", "cleaner",
+    ]
+
+    print("Applying transformer nullspace projection")
+    project_transformer(
+        model,
+        tokenizer,
+        professions,
+        male_word="he",
+        female_word="she"
+    )
 
 
 def _is_huggingface_model(model):
@@ -3744,6 +3803,7 @@ def main():
     parser.add_argument('--languages', nargs='+', default=['en', 'fr'], help='Languages for MultiSimLex evaluation')
     parser.add_argument('--cross_lingual', action='store_true', help='Run cross-lingual MultiSimLex evaluation')
     parser.add_argument("--ablate_sense", type=int, default=None)
+    parser.add_argument("--project", action="store_true")
     parser.add_argument(
     "--multisimlex_dir",
     type=str,
