@@ -81,13 +81,13 @@ def eval_model(name, path, device, data_dir,
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     if name == "transformer" and project:
-    print("Applying global transformer gender projection en")
-    project_transformer(
-        model,
-        tokenizer,
-        male_word="he",
-        female_word="she"
-    )
+        print("Applying global transformer gender projection en")
+        project_transformer(
+            model,
+            tokenizer,
+            male_word="he",
+            female_word="she"
+        )
         
     if name == "backpack" and ablate_sense_idx is not None:
         print(f"Ablating sense {ablate_sense_idx}")
