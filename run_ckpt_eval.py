@@ -53,14 +53,69 @@ def ablate_sense(model, sense_idx):
 
     model.sense_layer.forward = patched_forward
 
-def eval_model(name, path, device, data_dir, ablate_sense_idx=None):
+def project_transformer(model, tokenizer, professions,
+                        male_word="il", female_word="elle"):
+
+    old_forward = model.token_embeddings.forward
+
+    male_id = tokenizer.encode(
+        male_word, add_special_tokens=False
+    )[0]
+    female_id = tokenizer.encode(
+        female_word, add_special_tokens=False
+    )[0]
+
+    with torch.no_grad():
+        E = model.token_embeddings.weight
+        g = E[male_id] - E[female_id]
+        g = g / (g.norm() + 1e-12)
+
+    target_ids = []
+    for word in professions:
+        target_ids.extend(
+            tokenizer.encode(word, add_special_tokens=False)
+        )
+    target_ids = list(set(target_ids))
+
+    def patched_forward(input_ids):
+        emb = old_forward(input_ids)
+
+        mask = torch.zeros_like(input_ids, dtype=torch.bool)
+
+        for tok_id in target_ids:
+            mask |= input_ids == tok_id
+
+        if mask.any():
+            selected = emb[mask]
+            projection = (selected @ g).unsqueeze(-1) * g
+            emb[mask] = selected - projection
+
+        return emb
+
+    model.token_embeddings.forward = patched_forward
+
+def eval_model(name, path, device, data_dir,
+               ablate_sense_idx=None, project=False):    
     print(f"\n{'='*70}\nEVALUATING: {name}\n{'='*70}")
     t0 = time.time()
     model, config = load_model(path, device)
     params = sum(p.numel() for p in model.parameters())
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    if name == "transformer" and project:
+    professions = [
+        "médecin",
+        "analyste",
+        "bibliothécaire",
+        "comptable",
+        "designer",
+        "manager",
+        "réceptionniste",
+        "secrétaire",
+    ]
 
+    print("Applying transformer gender projection")
+    project_transformer(model, tokenizer, professions)
     if name == "backpack" and ablate_sense_idx is not None:
         print(f"Ablating sense {ablate_sense_idx}")
         ablate_sense(model, ablate_sense_idx)
@@ -99,6 +154,7 @@ def main():
                         help="Comma-separated: backpack, transformer")
     parser.add_argument("--out", default="out/ckpt_eval_results.json")
     parser.add_argument("--ablate_sense", type=int, default=None)
+    parser.add_argument("--project", action="store_true")
     
     args = parser.parse_args()
 
@@ -123,6 +179,7 @@ def main():
             device,
             args.data_dir,
             args.ablate_sense
+           args.project
         )
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
