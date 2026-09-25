@@ -42,7 +42,7 @@ def ablate_sense(model, sense_idx):
 
     model.sense_layer.forward = patched_forward
 
-def project_transformer(model, tokenizer, male_word="il", female_word="elle"):
+def project_transformer(model, tokenizer, male_word="he", female_word="she"):
 
     male_id = tokenizer.encode(
         male_word, add_special_tokens=False
@@ -3799,12 +3799,12 @@ def main():
     if args.project and isinstance(model, StandardTransformerLM):
     
     
-        print("Applying transformer nullspace projection fr full")
+        print("Applying transformer nullspace projection en full")
         project_transformer(
             model,
             tokenizer,
-            male_word="il",
-            female_word="elle"
+            male_word="he",
+            female_word="she"
         )
     
      # MultiSimLex evaluation
