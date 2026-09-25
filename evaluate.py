@@ -42,40 +42,26 @@ def ablate_sense(model, sense_idx):
 
     model.sense_layer.forward = patched_forward
 
-def project_transformer(model, tokenizer, professions,
+def project_transformer(model, tokenizer, professions=None,
                         male_word="il", female_word="elle"):
 
-    old_forward = model.token_embeddings.forward
-
-    male_id = tokenizer.encode(male_word, add_special_tokens=False)[0]
-    female_id = tokenizer.encode(female_word, add_special_tokens=False)[0]
+    male_id = tokenizer.encode(
+        male_word, add_special_tokens=False
+    )[0]
+    female_id = tokenizer.encode(
+        female_word, add_special_tokens=False
+    )[0]
 
     with torch.no_grad():
         E = model.token_embeddings.weight
+
+        # gender direction
         g = E[male_id] - E[female_id]
         g = g / (g.norm() + 1e-12)
 
-    target_ids = []
-    for word in professions:
-        target_ids.extend(
-            tokenizer.encode(word, add_special_tokens=False)
-        )
-    target_ids = list(set(target_ids))
-
-    def patched_forward(input_ids):
-        emb = old_forward(input_ids)
-
-        mask = torch.zeros_like(input_ids, dtype=torch.bool)
-
-        for tok_id in target_ids:
-            mask |= input_ids == tok_id
-
-        if mask.any():
-            selected = emb[mask]
-            projection = (selected @ g).unsqueeze(-1) * g
-            emb[mask] = selected - projection
-
-        return emb
+        # remove gender direction from EVERY vocab embedding
+        projection = (E @ g).unsqueeze(-1) * g
+        E.sub_(projection)
 
     model.token_embeddings.forward = patched_forward
 
