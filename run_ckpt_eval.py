@@ -81,7 +81,7 @@ def eval_model(name, path, device, data_dir,
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     if name == "transformer" and project:
-        print("Applying global transformer gender projection en")
+        print("Applying global transformer gender projection en full")
         project_transformer(
             model,
             tokenizer,
