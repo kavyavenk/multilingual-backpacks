@@ -54,7 +54,7 @@ def ablate_sense(model, sense_idx):
     model.sense_layer.forward = patched_forward
 
 def project_transformer(model, tokenizer, professions,
-                        male_word="he", female_word="she"):
+                        male_word="il", female_word="elle"):
 
     old_forward = model.token_embeddings.forward
 
@@ -104,6 +104,17 @@ def eval_model(name, path, device, data_dir,
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     if name == "transformer" and project:
         professions = [
+            "médecin",
+            "analyste",
+            "bibliothécaire",
+            "comptable",
+            "designer",
+            "manager",
+            "réceptionniste",
+            "secrétaire",
+        ]
+        '''
+        professions = [
             "mechanic",
             "accountant",
             "farmer",
@@ -145,6 +156,7 @@ def eval_model(name, path, device, data_dir,
             "tailor",
             "cleaner",
         ]
+        '''
 
         print("Applying transformer gender projection")
         project_transformer(model, tokenizer, professions)
