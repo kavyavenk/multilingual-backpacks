@@ -252,27 +252,7 @@ def load_model(out_dir_or_file, device):
     
     return model, config
 
-if args.project and isinstance(model, StandardTransformerLM):
 
-    professions = [
-        "mechanic", "accountant", "farmer", "baker", "assistant",
-        "construction", "guard", "carpenter", "analyst", "physician",
-        "cook", "clerk", "manager", "developer", "librarian",
-        "salesperson", "mover", "hairdresser", "auditor", "sheriff",
-        "janitor", "driver", "chief", "teacher", "writer",
-        "receptionist", "CEO", "nurse", "housekeeper", "secretary",
-        "counselor", "attendant", "supervisor", "designer", "lawyer",
-        "editor", "cashier", "laborer", "tailor", "cleaner",
-    ]
-
-    print("Applying transformer nullspace projection")
-    project_transformer(
-        model,
-        tokenizer,
-        professions,
-        male_word="he",
-        female_word="she"
-    )
 
 
 def _is_huggingface_model(model):
@@ -3829,7 +3809,27 @@ def main():
         else:
             print("Transformer: no sense ablation")
         
+    if args.project and isinstance(model, StandardTransformerLM):
+
+        professions = [
+            "mechanic", "accountant", "farmer", "baker", "assistant",
+            "construction", "guard", "carpenter", "analyst", "physician",
+            "cook", "clerk", "manager", "developer", "librarian",
+            "salesperson", "mover", "hairdresser", "auditor", "sheriff",
+            "janitor", "driver", "chief", "teacher", "writer",
+            "receptionist", "CEO", "nurse", "housekeeper", "secretary",
+            "counselor", "attendant", "supervisor", "designer", "lawyer",
+            "editor", "cashier", "laborer", "tailor", "cleaner",
+        ]
     
+        print("Applying transformer nullspace projection")
+        project_transformer(
+            model,
+            tokenizer,
+            professions,
+            male_word="he",
+            female_word="she"
+        )
     # Load tokenizer
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name)
