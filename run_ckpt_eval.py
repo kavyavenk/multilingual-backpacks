@@ -54,7 +54,7 @@ def ablate_sense(model, sense_idx):
     model.sense_layer.forward = patched_forward
 
 def project_transformer(model, tokenizer,
-                        male_word="he", female_word="she"):
+                        male_word="il", female_word="elle"):
 
     male_id = tokenizer.encode(
         male_word, add_special_tokens=False
@@ -81,12 +81,12 @@ def eval_model(name, path, device, data_dir,
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     if name == "transformer" and project:
-        print("Applying global transformer gender projection en full")
+        print("Applying global transformer gender projection fr full")
         project_transformer(
             model,
             tokenizer,
-            male_word="he",
-            female_word="she"
+            male_word="il",
+            female_word="elle"
         )
         
     if name == "backpack" and ablate_sense_idx is not None:
