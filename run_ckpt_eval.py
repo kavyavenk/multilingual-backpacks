@@ -53,7 +53,7 @@ def ablate_sense(model, sense_idx):
 
     model.sense_layer.forward = patched_forward
 
-def project_transformer(model, tokenizer, professions=None,
+def project_transformer(model, tokenizer,
                         male_word="he", female_word="she"):
 
     male_id = tokenizer.encode(
@@ -66,11 +66,9 @@ def project_transformer(model, tokenizer, professions=None,
     with torch.no_grad():
         E = model.token_embeddings.weight
 
-        # gender direction
         g = E[male_id] - E[female_id]
         g = g / (g.norm() + 1e-12)
 
-        # remove gender direction from every vocab embedding
         projection = (E @ g).unsqueeze(-1) * g
         E.sub_(projection)
 
@@ -83,8 +81,13 @@ def eval_model(name, path, device, data_dir,
     tokenizer_name = getattr(config, "tokenizer_name", "xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     if name == "transformer" and project:
-        print("Applying transformer gender projection en")
-        project_transformer(model, tokenizer, professions)
+    print("Applying global transformer gender projection en")
+    project_transformer(
+        model,
+        tokenizer,
+        male_word="he",
+        female_word="she"
+    )
         
     if name == "backpack" and ablate_sense_idx is not None:
         print(f"Ablating sense {ablate_sense_idx}")
