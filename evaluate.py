@@ -42,8 +42,7 @@ def ablate_sense(model, sense_idx):
 
     model.sense_layer.forward = patched_forward
 
-def project_transformer(model, tokenizer, professions=None,
-                        male_word="il", female_word="elle"):
+def project_transformer(model, tokenizer, male_word="il", female_word="elle"):
 
     male_id = tokenizer.encode(
         male_word, add_special_tokens=False
