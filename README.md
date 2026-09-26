@@ -13,9 +13,10 @@ This project implements multilingual Backpack Language Models for French-English
 - [Quick Start](#quick-start)
 - [Training](#training)
 - [Code Overview](#code-overview)
-- [Perplexity and Translational Ability Evaluation](#perplexity)
+- [Perplexity and Translational Ability Evaluation](#perplexity-and-translational-ability-evaluation)
 - [MultiSimLex Evaluation](#multisimlex-evaluation)
 - [Debiasing](#debiasing)
+- [References](#references)
 
 ---
 
