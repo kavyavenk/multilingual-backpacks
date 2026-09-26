@@ -206,9 +206,9 @@ The resume functionality automatically:
 - MultiSimLex
 
 ## Perplexity and Sentence-Level Similarity
-
-#Transformer: Optionally can include nullspace debiasing with --project
 ```bash
+#Transformer: Optionally can include nullspace debiasing with --project
+
 !python run_ckpt_eval.py --models transformer --project
 
 #Backpack: Optionally can include sense ablation with --sense
