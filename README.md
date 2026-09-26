@@ -19,7 +19,7 @@ This project implements multilingual Backpack Language Models for French-English
 - [Sense Vector Analysis](#sense-vector-analysis)
 - [Baseline Models](#baseline-models)
 - [MultiSimLex Evaluation](#multisimlex-evaluation)
-- [Results & Status](#results--status)
+- [Debiasing](#debiasing)
 
 ---
 
@@ -206,61 +206,8 @@ python evaluate.py \
 3. **Sentence-Level Similarity**:
    - Cross-lingual sentence similarity (cosine similarity)
 
----
 
-### Manual Verification Steps
 
-#### 1. Check Sense Labels
-
-```bash
-python -c "
-from evaluate import analyze_sense_vectors, load_model, SENSE_LABELS
-from transformers import AutoTokenizer
-
-model, _ = load_model('out/backpack_full', 'cpu')
-tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
-
-# Check sense labels exist
-assert len(SENSE_LABELS) == 16, f'Expected 16 sense labels, got {len(SENSE_LABELS)}'
-print('All 16 sense labels defined')
-
-# Check they appear in output
-results = analyze_sense_vectors(model, tokenizer, ['hello'], 'cpu', verbose=True)
-print('Sense labels displayed in output')
-"
-```
-
-#### 2. Verify Language Filtering
-
-```bash
-python -c "
-from evaluate import analyze_sense_vectors, load_model
-from transformers import AutoTokenizer
-
-model, _ = load_model('out/backpack_full', 'cpu')
-tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
-
-results = analyze_sense_vectors(model, tokenizer, ['hello'], 'cpu', verbose=True)
-print('Check output, should only show English/French words')
-"
-```
-
-#### 3. Test Translation Generation
-
-```bash
-python -c "
-from evaluate import load_model, generate_translation
-from transformers import AutoTokenizer
-
-model, _ = load_model('out/backpack_full', 'cpu')
-tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
-
-result = generate_translation(model, tokenizer, 'hello', 'cpu', greedy=True)
-print(f'Generated: {result}')  # Should be 'bonjour'
-"
-```
-
----
 
 ## Code Overview
 
@@ -275,50 +222,14 @@ print(f'Generated: {result}')  # Should be 'bonjour'
 - Checkpoint saving and resuming
 - Training log generation
 
-### Evaluation (`evaluate.py`)
+### Evaluation (`'run_ckpt_eval.py')
 
-Key functions:
-- `load_model()`: Load trained models
-- `analyze_sense_vectors()`: Analyze sense vector predictions and semantics
-- `evaluate_translation_accuracy()`: Evaluate translation quality
-- `evaluate_multisimlex()`: Word similarity evaluation
-- `evaluate_sentence_similarity()`: Sentence-level similarity
-- `generate_translation()`: Generate translations using sense retrieval
-
-### Analysis (`experiments/`)
-
-- `sense_vector.py`: Sense vector analysis
-- `analyze_results.py`: Results comparison
-- `visualize_senses.py`: Sense visualization
-
----
-
-### Sense Analysis Features
-
-- **Next Wordpiece Predictions**: What tokens each sense predicts
-- **Semantic Relatedness**: Words semantically similar to each sense in embedding space
-- **Syntactic Patterns**: Categorization of predictions (articles, prepositions, verbs, nouns)
-- **Quantitative Metrics**: Entropy, sense similarity, prediction overlap
-
----
+- Perplexity
+- Delta_mu
 
 ## MultiSimLex Evaluation
 
 MultiSimLex is a multilingual word similarity benchmark that evaluates how well models capture semantic similarity between word pairs.
-
-#### Monolingual Evaluation (English/French)
-
-- **Excellent (≥0.70 EN, ≥0.65 FR)**: Strong multilingual models (XLM-RoBERTa, mBERT)
-- **Good (≥0.60 EN, ≥0.55 FR)**: Good multilingual models
-- **Baseline (≥0.45 EN, ≥0.40 FR)**: Basic word embeddings (Word2Vec, GloVe)
-
-#### Cross-lingual Evaluation
-
-- **Excellent (≥0.60)**: Strong cross-lingual alignment
-- **Good (≥0.50)**: Good cross-lingual alignment
-- **Baseline (≥0.35)**: Basic cross-lingual models
-
-### Usage
 
 ```bash
 # Run MultiSimLex evaluation
@@ -334,6 +245,12 @@ python evaluate.py \
     --cross_lingual \
     --languages en fr
 ```
+
+## Debiasing
+
+
+
+
 
 ## References
 
