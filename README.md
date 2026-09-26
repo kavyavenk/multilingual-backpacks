@@ -88,23 +88,13 @@ python train.py \
 python evaluate.py --out_dir out-europarl-scratch
 ```
 
-### Compare Models
-
-```bash
-python compare_models.py \
-    --backpack_dir out/backpack_full \
-    --transformer_dir out/transformer_full \
-    --device cpu \
-    --translation_samples 500
-```
-
 ---
 
 ## Training
 
 ### Model Configurations
 
-Both models use **identical parameters**:
+Both models use identical parameters:
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
@@ -175,7 +165,7 @@ Checkpoints are saved to:
 
 #### Resume Training
 
-If training is interrupted (e.g., GPU disconnection), resume with:
+If training is interrupted, resume with:
 
 ```bash
 # Resume Backpack training
@@ -199,49 +189,21 @@ The resume functionality automatically:
 
 ## Evaluation
 
-### Full Evaluation Suite
-
-```bash
-python run_full_evaluation.py \
-    --out_dir out/backpack_full \
-    --device cpu
-```
-
-### Individual Evaluations
-
 ```bash
 # Evaluate Backpack
 python evaluate.py \
     --out_dir out/backpack_full \
     --device cpu
 
-# Compare both models
-python compare_models.py \
-    --backpack_dir out/backpack_full \
-    --transformer_dir out/transformer_full \
-    --device cpu \
-    --translation_samples 500
-```
 
 ### Evaluation Metrics
 
-The evaluation suite includes:
+1. **Perplexity**
 
-1. **Translation Quality**:
-   - BLEU scores (average, median, min, max)
-   - Translation accuracy (exact match, word-level, character-level)
-
-2. **Word Similarity**:
+3. **Word Similarity**:
    - MultiSimLex evaluation (monolingual and cross-lingual)
-   - Fallback word pairs when dataset unavailable
 
-3. **Sense Vector Analysis**:
-   - Sense interpretability (16 labeled senses)
-   - Cross-lingual sense alignment
-   - Semantic relatedness in embedding space
-   - Syntactic patterns
-
-4. **Sentence-Level Similarity**:
+3. **Sentence-Level Similarity**:
    - Cross-lingual sentence similarity (cosine similarity)
 
 ---
