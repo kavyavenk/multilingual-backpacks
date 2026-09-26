@@ -185,7 +185,7 @@ The resume functionality automatically:
 - Training log generation
 
 ### Evaluation 1 (`run_ckpt_eval.py`)
-- perplexity and sentence-level similarity
+- Perplexity and translational ability (sentence-level similarity)
 
 ### Evaluation 2 (`evaluate.py`)
 - MultiSimLex
@@ -196,16 +196,6 @@ The resume functionality automatically:
 ### Backpack Debiasing (`sense_vector.py`)
 - Sense ablation
 
-
-### Evaluation Metrics
-
-1. **Perplexity**
-
-3. **Word Similarity**:
-   - MultiSimLex evaluation (monolingual and cross-lingual)
-
-3. **Sentence-Level Similarity**:
-   - Cross-lingual sentence similarity (cosine similarity)
 
 
 ## Perplexity and Translational Ability (Sentence-Level Similarity)
