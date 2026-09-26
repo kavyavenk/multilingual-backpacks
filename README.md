@@ -197,7 +197,7 @@ The resume functionality automatically:
 - Sense ablation
 
 
-
+#perplexity
 ## Perplexity and Translational Ability (Sentence-Level Similarity)
 ```bash
 #Transformer: Optionally can include nullspace debiasing with --project
