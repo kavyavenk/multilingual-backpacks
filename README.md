@@ -199,17 +199,14 @@ The resume functionality automatically:
 - Checkpoint saving and resuming
 - Training log generation
 
-### Evaluation (`'run_ckpt_eval.py')
+### Evaluation (`'run_ckpt_eval.py' for perplexity and sentence-level similarity and 'evaluate.py' for MultiSimLex)
 
-- Perplexity
-- Delta_mu
-- MultiSimLex
+## Perplexity and Sentence-Level Similarity
 
-## Perplexity, Delta_mu
-# Transformer: Optionally can include nullspace debiasing
+Transformer: Optionally can include nullspace debiasing with --project
 !python run_ckpt_eval.py --models transformer --project
 
-# Backpack: Optionally can include sense ablation
+Backpack: Optionally can include sense ablation with --sense
 !python run_ckpt_eval.py --models backpace --sense 1 # number of sense to ablate
 
 
