@@ -29,11 +29,11 @@ This project implements multilingual Backpack Language Models for French-English
 │   │   ├── segregate_languages.py  # Create separate language files with tags
 │   │   └── README.md            # Europarl-specific documentation
 ├── config/                # Configuration files for training
-├── experiments/           # Evaluation and analysis scripts
+├── experiments/           # Evaluation and analysis scripts, including debiasing scripts for Transformer and Backpack model
 ├── model.py              # Backpack model architecture
 ├── train.py              # Training script
 ├── evaluate.py           # Evaluation script (MultiSimLex)
-└──run_ckpt_eval.py        #Evaluation script (Perplexity, translational ability)
+└── run_ckpt_eval.py        #Evaluation script (Perplexity, translational ability)
 ```
 
 ---
