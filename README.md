@@ -2,10 +2,9 @@
 
 This project implements multilingual Backpack Language Models for French-English, based on the nanoBackpackLM architecture. The project focuses on:
 
-1. Training small Backpack models from scratch on Europarl (French-English parallel data)
-2. Finetuning pre-trained Backpack models on multilingual data
-3. Evaluating multilingual word representation capabilities
-4. Analyzing sense vectors across languages
+1. Training matched Backpack and Transformer models from scratch on Europarl (French-English parallel data)
+2. Evaluating each model on perplexity, translational ability (sentence-level), and monolingual and multilingual MultiSimLex
+3. Performing sense vector ablation on the Backpack model, nullspace projection on the Transformer for debiasing
 
 ## Table of Contents
 
@@ -15,8 +14,6 @@ This project implements multilingual Backpack Language Models for French-English
 - [Training](#training)
 - [Evaluation](#evaluation)
 - [Code Overview](#code-overview)
-- [Sense Vector Analysis](#sense-vector-analysis)
-- [Baseline Models](#baseline-models)
 - [MultiSimLex Evaluation](#multisimlex-evaluation)
 - [Debiasing](#debiasing)
 
@@ -199,16 +196,16 @@ The resume functionality automatically:
 - Checkpoint saving and resuming
 - Training log generation
 
-### Evaluation 1 (`'run_ckpt_eval.py')
+### Evaluation 1 (`run_ckpt_eval.py`)
 - perplexity and sentence-level similarity
 
-### Evaluation 2 ('evaluate.py')
+### Evaluation 2 (`evaluate.py`)
 - MultiSimLex
 
-### Transformer Debiasing ('transformer_only_nullspace_projection.py')
+### Transformer Debiasing (`transformer_only_nullspace_projection.py`)
 - Nullspace projection
   
-### Backpack Debiasing ('sense_vector.py')
+### Backpack Debiasing (`sense_vector.py`)
 - Sense ablation
 
 
