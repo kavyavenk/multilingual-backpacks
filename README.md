@@ -171,18 +171,6 @@ The resume functionality automatically:
 - Restores best validation loss
 - Restores training log
 
-
-### Evaluation Metrics
-
-1. **Perplexity**
-
-3. **Word Similarity**:
-   - MultiSimLex evaluation (monolingual and cross-lingual)
-
-3. **Sentence-Level Similarity**:
-   - Cross-lingual sentence similarity (cosine similarity)
-
-
 ## Code Overview
 
 ### Core Architecture (`model.py`)
@@ -207,6 +195,17 @@ The resume functionality automatically:
   
 ### Backpack Debiasing (`sense_vector.py`)
 - Sense ablation
+
+
+### Evaluation Metrics
+
+1. **Perplexity**
+
+3. **Word Similarity**:
+   - MultiSimLex evaluation (monolingual and cross-lingual)
+
+3. **Sentence-Level Similarity**:
+   - Cross-lingual sentence similarity (cosine similarity)
 
 
 ## Perplexity and Translational Ability (Sentence-Level Similarity)
