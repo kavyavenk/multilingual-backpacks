@@ -205,6 +205,13 @@ The resume functionality automatically:
 ### Evaluation 2 ('evaluate.py')
 - MultiSimLex
 
+### Transformer Debiasing ('transformer_only_nullspace_projection.py')
+- Nullspace projection
+  
+### Backpack Debiasing ('sense_vector.py')
+- Sense ablation
+
+
 ## Perplexity and Sentence-Level Similarity
 ```bash
 #Transformer: Optionally can include nullspace debiasing with --project
@@ -215,14 +222,6 @@ The resume functionality automatically:
 
 !python run_ckpt_eval.py --models backpace --sense 1 # number of sense to ablate
 ```
-
-### Debiasing
-
-# Transformer: Nullspace projection
-    - transformer_only_nullspace_projection.py
-
-# Backpack: Sense ablation
-    - sense_vector.py
 
 
 ## MultiSimLex Evaluation
