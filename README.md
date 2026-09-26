@@ -99,7 +99,7 @@ Both models use identical parameters:
 
 **Parameter Counts:**
 - **Backpack**: ~132M parameters
-- **Transformer**: ~131 M parameters
+- **Transformer**: ~131M parameters
 
 ### Training Commands
 
@@ -145,7 +145,7 @@ Checkpoints are saved to:
   - Optimizer state dict
   - Current iteration number
   - Best validation loss
-  - Training log (losses, top activating words)
+  - Training log
 
 #### Resume Training
 
