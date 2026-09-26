@@ -205,7 +205,7 @@ The resume functionality automatically:
 
 #Backpack: Optionally can include sense ablation with --sense
 
-!python run_ckpt_eval.py --models backpace --sense 1 # number of sense to ablate
+!python run_ckpt_eval.py --models backpack --sense 1 # number of sense to ablate
 ```
 
 
