@@ -257,19 +257,6 @@ The evaluation suite includes:
 
 ---
 
-## Verification
-
-### Quick Verification Script
-
-```bash
-python verify_evaluation.py --out_dir out/backpack_full
-```
-
-**Expected Output:**
-```
-ALL CHECKS PASSED
-```
-
 ### Manual Verification Steps
 
 #### 1. Check Sense Labels
@@ -364,47 +351,9 @@ Key functions:
 
 ---
 
-## Baseline Models
-
-### 1. Pretrained Backpack Model (Finetuning)
-
-- **Model**: Hewitt et al.'s Small Backpack Language Model (`stanfordnlp/backpack-gpt2`)
-- **Pretraining**: Trained on OpenWebText (English corpus)
-- **Purpose**: Baseline for finetuning experiments
-
-```bash
-python train.py \
-    --config train_europarl_finetune \
-    --out_dir out-europarl-finetune \
-    --data_dir europarl \
-    --init_from backpack-small
-```
-
-### 2. Standard Transformer Baseline (Scratch Training)
-
-- **Model**: `StandardTransformerLM` - a standard transformer language model
-- **Architecture**: Identical to Backpack model except:
-  - Uses regular token embeddings (not sense embeddings)
-  - No sense predictor network
-  - No weighted combination of sense vectors
-- **Training**: Trained from scratch on Europarl (same data as Backpack)
-
-```bash
-python train.py \
-    --model_type transformer \
-    --config train_europarl_transformer_baseline \
-    --out_dir out/transformer_full \
-    --data_dir europarl \
-    --init_from scratch
-```
-
----
-
 ## MultiSimLex Evaluation
 
 MultiSimLex is a multilingual word similarity benchmark that evaluates how well models capture semantic similarity between word pairs.
-
-### Performance Benchmarks
 
 #### Monolingual Evaluation (English/French)
 
