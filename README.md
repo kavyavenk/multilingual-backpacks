@@ -214,7 +214,7 @@ The resume functionality automatically:
 #Backpack: Optionally can include sense ablation with --sense
 
 !python run_ckpt_eval.py --models backpace --sense 1 # number of sense to ablate
-
+```
 
 ### Debiasing
 
@@ -225,7 +225,6 @@ The resume functionality automatically:
     - sense_vector.py
 
 
-
 ## MultiSimLex Evaluation
 MultiSimLex is a multilingual word similarity benchmark that evaluates how well models capture semantic similarity between word pairs.
 
@@ -234,7 +233,7 @@ MultiSimLex is a multilingual word similarity benchmark that evaluates how well 
 python evaluate.py \
     --out_dir out/backpack_full \ # or out/transformer_full
     --multisimlex \
-     --cross_lingual \ # for cross-lingual MultiSimLex
+    --cross_lingual \ # for cross-lingual MultiSimLex
     --languages en fr
     --ablate_sense # for Backpack debiasing
     --project # for Transformer debiasing
