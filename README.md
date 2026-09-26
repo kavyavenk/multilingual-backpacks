@@ -185,15 +185,6 @@ The resume functionality automatically:
 3. **Sentence-Level Similarity**:
    - Cross-lingual sentence similarity (cosine similarity)
 
-## Evaluation
-
-```bash
-python evaluate.py \
-  --out_dir MODEL_DIRECTORY \
-  --multisimlex \
-  --cross_lingual \
-  --multisimlex_dir data/multisimlex
-
 
 ## Code Overview
 
