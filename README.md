@@ -14,7 +14,6 @@ This project implements multilingual Backpack Language Models for French-English
 - [Quick Start](#quick-start)
 - [Training](#training)
 - [Evaluation](#evaluation)
-- [Verification](#verification)
 - [Code Overview](#code-overview)
 - [Sense Vector Analysis](#sense-vector-analysis)
 - [Baseline Models](#baseline-models)
@@ -36,10 +35,8 @@ This project implements multilingual Backpack Language Models for French-English
 ├── experiments/           # Evaluation and analysis scripts
 ├── model.py              # Backpack model architecture
 ├── train.py              # Training script
-├── sample.py             # Sampling/inference script
-├── evaluate.py           # Evaluation scripts
-├── compare_models.py     # Model comparison script
-└── verify_evaluation.py  # Verification script
+├── evaluate.py           # Evaluation script (MultiSimLex)
+└──run_ckpt_eval.py        #Evaluation script (Perplexity, delta_mu)
 ```
 
 ---
@@ -81,15 +78,6 @@ python train.py \
     --device cuda
 ```
 
-
-### Evaluate
-
-```bash
-python evaluate.py --out_dir out-europarl-scratch
-```
-
----
-
 ## Training
 
 ### Model Configurations
@@ -113,9 +101,8 @@ Both models use identical parameters:
 | `eval_iters` | 200 | Number of eval batches |
 
 **Parameter Counts:**
-- **Backpack**: ~1.64B parameters (1,642,985,488)
-- **Transformer**: ~203M parameters (202,985,488)
-- The difference is due to sense embeddings (vocab_size × n_embd × n_senses)
+- **Backpack**: ~132M parameters
+- **Transformer**: ~131 M parameters
 
 ### Training Commands
 
@@ -187,14 +174,6 @@ The resume functionality automatically:
 - Restores best validation loss
 - Restores training log
 
-## Evaluation
-
-```bash
-# Evaluate Backpack
-python evaluate.py \
-    --out_dir out/backpack_full \
-    --device cpu
-
 
 ### Evaluation Metrics
 
@@ -206,7 +185,14 @@ python evaluate.py \
 3. **Sentence-Level Similarity**:
    - Cross-lingual sentence similarity (cosine similarity)
 
+## Evaluation
 
+```bash
+python evaluate.py \
+  --out_dir MODEL_DIRECTORY \
+  --multisimlex \
+  --cross_lingual \
+  --multisimlex_dir data/multisimlex
 
 
 ## Code Overview
@@ -226,29 +212,36 @@ python evaluate.py \
 
 - Perplexity
 - Delta_mu
+- MultiSimLex
+
+## Perplexity, Delta_mu
+# Transformer: Optionally can include nullspace debiasing
+!python run_ckpt_eval.py --models transformer --project
+
+# Backpack: Optionally can include sense ablation
+!python run_ckpt_eval.py --models backpace --sense 1 # number of sense to ablate
+
 
 ## MultiSimLex Evaluation
-
 MultiSimLex is a multilingual word similarity benchmark that evaluates how well models capture semantic similarity between word pairs.
 
 ```bash
 # Run MultiSimLex evaluation
 python evaluate.py \
-    --out_dir out/backpack_full \
+    --out_dir out/backpack_full \ # or out/transformer_full
     --multisimlex \
+     --cross_lingual \ # for cross-lingual MultiSimLex
     --languages en fr
+    --ablate_sense # for Backpack debiasing
+    --project # for Transformer debiasing
 
-# With cross-lingual evaluation
-python evaluate.py \
-    --out_dir out/backpack_full \
-    --multisimlex \
-    --cross_lingual \
-    --languages en fr
-```
+### Debiasing
 
-## Debiasing
+# Transformer: Nullspace projection
+    - transformer_only_nullspace_projection.py
 
-
+# Backpack: Sense ablation
+    - sense_vector.py
 
 
 
