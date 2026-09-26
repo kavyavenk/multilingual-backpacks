@@ -207,14 +207,14 @@ The resume functionality automatically:
 
 ## Perplexity and Sentence-Level Similarity
 
-Transformer: Optionally can include nullspace debiasing with --project
+#Transformer: Optionally can include nullspace debiasing with --project
 ```bash
 !python run_ckpt_eval.py --models transformer --project
 
-Backpack: Optionally can include sense ablation with --sense
-```bash
+#Backpack: Optionally can include sense ablation with --sense
 
 !python run_ckpt_eval.py --models backpace --sense 1 # number of sense to ablate
+
 
 ### Debiasing
 
