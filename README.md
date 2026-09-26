@@ -15,7 +15,6 @@ This project implements multilingual Backpack Language Models for French-English
 - [Code Overview](#code-overview)
 - [Perplexity and Translational Ability Evaluation](#perplexity-and-translational-ability-evaluation)
 - [MultiSimLex Evaluation](#multisimlex-evaluation)
-- [Debiasing](#debiasing)
 - [References](#references)
 
 ---
@@ -198,7 +197,7 @@ The resume functionality automatically:
 - Sense ablation
 
 
-## Perplexity and Translational Ability (Sentence-Level Similarity)
+## Perplexity and Translational Ability Evaluation
 ```bash
 #Transformer: Optionally can include nullspace debiasing with --project
 
