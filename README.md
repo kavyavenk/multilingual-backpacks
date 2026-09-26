@@ -12,7 +12,6 @@ This project implements multilingual Backpack Language Models for French-English
 - [Setup](#setup)
 - [Quick Start](#quick-start)
 - [Training](#training)
-- [Evaluation](#evaluation)
 - [Code Overview](#code-overview)
 - [MultiSimLex Evaluation](#multisimlex-evaluation)
 - [Debiasing](#debiasing)
