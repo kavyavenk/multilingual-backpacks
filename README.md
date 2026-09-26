@@ -237,7 +237,7 @@ python evaluate.py \
 
 
 
-## References
+### References
 
 - nanoBackpackLM repository: https://github.com/SwordElucidator/nanoBackpackLM
 - Backpack Language Models paper repository: https://github.com/john-hewitt/backpacks-flash-attn
