@@ -199,7 +199,11 @@ The resume functionality automatically:
 - Checkpoint saving and resuming
 - Training log generation
 
-### Evaluation (`'run_ckpt_eval.py' for perplexity and sentence-level similarity and 'evaluate.py' for MultiSimLex)
+### Evaluation 1 (`'run_ckpt_eval.py')
+- perplexity and sentence-level similarity
+
+### Evaluation 2 ('evaluate.py')
+- MultiSimLex
 
 ## Perplexity and Sentence-Level Similarity
 
