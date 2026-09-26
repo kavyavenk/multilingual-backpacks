@@ -33,7 +33,7 @@ This project implements multilingual Backpack Language Models for French-English
 ├── model.py              # Backpack model architecture
 ├── train.py              # Training script
 ├── evaluate.py           # Evaluation script (MultiSimLex)
-└──run_ckpt_eval.py        #Evaluation script (Perplexity, delta_mu)
+└──run_ckpt_eval.py        #Evaluation script (Perplexity, translational ability)
 ```
 
 ---
@@ -209,7 +209,7 @@ The resume functionality automatically:
 - Sense ablation
 
 
-## Perplexity and Sentence-Level Similarity
+## Perplexity and Translational Ability (Sentence-Level Similarity)
 ```bash
 #Transformer: Optionally can include nullspace debiasing with --project
 
