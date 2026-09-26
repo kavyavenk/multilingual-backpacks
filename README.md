@@ -73,8 +73,6 @@ python data/europarl/segregate_languages.py --language_pair en-fr --create_align
 
 ## Quick Start
 
-### Train from Scratch
-
 ```bash
 python train.py \
     --config train_europarl_scratch \
@@ -83,15 +81,6 @@ python train.py \
     --device cuda
 ```
 
-### Finetune Pre-trained Model
-
-```bash
-python train.py \
-    --config train_europarl_finetune \
-    --out_dir out-europarl-finetune \
-    --data_dir europarl \
-    --init_from backpack-small
-```
 
 ### Evaluate
 
